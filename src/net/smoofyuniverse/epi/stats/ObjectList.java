@@ -1,0 +1,293 @@
+package net.smoofyuniverse.epi.stats;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import net.smoofyuniverse.common.fxui.task.ObservableTask;
+import net.smoofyuniverse.epi.api.GuildInfo;
+import net.smoofyuniverse.epi.api.PlayerInfo;
+
+public class ObjectList {
+	public static final int FORMAT_VERSION = 1;
+	
+	private static final JsonFactory factory = new JsonFactory();
+	
+	public final Set<String> guilds = new HashSet<>();
+	public final Set<UUID> players = new HashSet<>();
+	public final Path defaultFile;
+	
+	public ObjectList(Path file) {
+		this.defaultFile = file;
+	}
+	
+	public void clear() {
+		this.guilds.clear();
+		this.players.clear();
+	}
+	
+	public void read() throws IOException {
+		read(this.defaultFile);
+	}
+	
+	public void read(Path file) throws IOException {
+		clear();
+		merge(file);
+	}
+	
+	public void merge(Path file) throws IOException {
+		if (!Files.exists(file))
+			return;
+		String fn = file.getFileName().toString();
+		
+		if (fn.endsWith(".json")) {
+			try (JsonParser json = factory.createParser(Files.newInputStream(file))) {
+				mergeJSON(json);
+			}
+		} else {
+			try (DataInputStream in = new DataInputStream(Files.newInputStream(file))) {
+				merge(in);
+			}
+		}
+	}
+	
+	public void merge(DataInputStream in) throws IOException {
+		int version = in.readInt();
+		if (version != FORMAT_VERSION)
+			throw new IOException("Invalid format version: " + version);
+		
+		int count = in.readInt();
+		for (int i = 0; i < count; i++)
+			this.guilds.add(in.readUTF());
+		
+		count = in.readInt();
+		for (int i = 0; i < count; i++)
+			this.players.add(new UUID(in.readLong(), in.readLong()));
+	}
+	
+	public void mergeJSON(JsonParser json) throws IOException {
+		if (json.nextToken() != JsonToken.START_OBJECT)
+			throw new JsonParseException(json, "Expected to start a new object");
+		
+		boolean versionCheck = true;
+		while (json.nextToken() != JsonToken.END_OBJECT) {
+			String field = json.getCurrentName();
+			
+			if (versionCheck) {
+				if (!field.equals("format_version") || json.nextToken() != JsonToken.VALUE_NUMBER_INT)
+					throw new IOException("Format version not provided");
+				
+				int version = json.getIntValue();
+				if (version != FORMAT_VERSION)
+					throw new IOException("Invalid format version: " + version);
+				
+				versionCheck = false;
+				continue;
+			}
+			
+			if (field.equals("guilds")) {
+				if (json.nextToken() != JsonToken.START_ARRAY)
+					throw new JsonParseException(json, "Field 'guilds' was expected to be an array");
+				
+				while (json.nextToken() != JsonToken.END_ARRAY) {
+					String g = json.getValueAsString();
+					if (g != null)
+						this.guilds.add(g);
+				}
+				continue;
+			}
+			
+			if (field.equals("players")) {
+				if (json.nextToken() != JsonToken.START_ARRAY)
+					throw new JsonParseException(json, "Field 'players' was expected to be an array");
+				
+				while (json.nextToken() != JsonToken.END_ARRAY) {
+					String p = json.getValueAsString();
+					if (p != null) {
+						try {
+							this.players.add(UUID.fromString(p));
+						} catch (Exception e) {}
+					}
+				}
+				continue;
+			}
+			
+			json.nextToken();
+			json.skipChildren();
+		}
+	}
+	
+	public void save() throws IOException {
+		save(this.defaultFile);
+	}
+	
+	public void save(Path file) throws IOException {
+		String fn = file.getFileName().toString();
+		
+		if (fn.endsWith(".json")) {
+			try (JsonGenerator json = factory.createGenerator(Files.newOutputStream(file))) {
+				json.useDefaultPrettyPrinter();
+				saveJSON(json);
+			}
+		} else {
+			try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(file))) {
+				save(out);
+			}
+		}
+	}
+	
+	public void save(DataOutputStream out) throws IOException {
+		out.writeInt(FORMAT_VERSION);
+		
+		out.writeInt(this.guilds.size());
+		for (String g : this.guilds)
+			out.writeUTF(g);
+		
+		out.writeInt(this.players.size());
+		for (UUID p : this.players) {
+			out.writeLong(p.getMostSignificantBits());
+			out.writeLong(p.getLeastSignificantBits());
+		}
+	}
+	
+	public void saveJSON(JsonGenerator json) throws IOException {
+		json.writeStartObject();
+		
+		json.writeFieldName("format_version");
+		json.writeNumber(FORMAT_VERSION);
+		
+		json.writeFieldName("guilds");
+		json.writeStartArray();
+		for (String g : this.guilds)
+			json.writeString(g);
+		json.writeEndArray();
+		
+		json.writeFieldName("players");
+		json.writeStartArray();
+		for (UUID p : this.players)
+			json.writeString(p.toString());
+		json.writeEndArray();
+		
+		json.writeEndObject();
+	}
+	
+	public Consumer<ObservableTask> update() {
+		return new UpdateTask();
+	}
+	
+	public boolean add(PlayerInfo p) {
+		if (p.guild == null)
+			return this.players.add(p.id);
+		
+		if (this.guilds.contains(p.guild.toLowerCase()))
+			return this.players.add(p.id);
+		
+		GuildInfo g = GuildInfo.get(p.guild).orElse(null);
+		if (g == null)
+			return this.players.add(p.id);
+		
+		this.guilds.add(g.name.toLowerCase());
+		for (UUID id : g.members)
+			this.players.add(id);
+		return true;
+	}
+	
+	public boolean add(GuildInfo g) {
+		if (this.guilds.add(g.name.toLowerCase())) {
+			for (UUID id : g.members)
+				this.players.add(id);
+			return true;
+		}
+		return false;
+	}
+	
+	public boolean remove(PlayerInfo p) {
+		return this.players.remove(p.id);
+	}
+	
+	public boolean remove(GuildInfo g) {
+		if (this.guilds.remove(g.name.toLowerCase())) {
+			for (UUID id : g.members)
+				this.players.remove(id);
+			return true;
+		}
+		return false;
+	}
+	
+	private class UpdateTask implements Consumer<ObservableTask> {
+
+		@Override
+		public void accept(ObservableTask task) {
+			int progress, total;
+			
+			task.setTitle("Collecte des données des guildes ..");
+			task.setProgress(0);
+			progress = 0;
+			total = ObjectList.this.guilds.size();
+			
+			List<GuildInfo> guilds = new ArrayList<>(total);
+			for (String name : ObjectList.this.guilds) {
+				if (task.isCancelled())
+					return;
+				task.setMessage("Guilde: " + name);
+				GuildInfo.get(name).ifPresent(guilds::add);
+				task.setProgress(++progress / (double) total);
+			}
+			ObjectList.this.guilds.clear();
+			
+			task.setTitle("Collecte des données des joueurs ..");
+			task.setProgress(0);
+			progress = 0;
+			total = ObjectList.this.players.size();
+			
+			List<PlayerInfo> players = new ArrayList<>(total);
+			for (UUID id : ObjectList.this.players) {
+				if (task.isCancelled())
+					return;
+				task.setMessage("Joueur: " + id);
+				PlayerInfo.get(id, false).ifPresent(players::add);
+				task.setProgress(++progress / (double) total);
+			}
+			ObjectList.this.players.clear();
+			
+			task.setTitle("Mise à jour de la liste des guildes ..");
+			task.setProgress(0);
+			progress = 0;
+			total = guilds.size();
+			
+			for (GuildInfo g : guilds) {
+				if (task.isCancelled())
+					return;
+				task.setMessage("Guilde: " + g.name);
+				add(g);
+				task.setProgress(++progress / (double) total);
+			}
+			
+			task.setTitle("Mise à jour de la liste des joueurs ..");
+			task.setProgress(0);
+			progress = 0;
+			total = players.size();
+			
+			for (PlayerInfo p : players) {
+				if (task.isCancelled())
+					return;
+				task.setMessage("Joueur: " + p.name);
+				add(p);
+				task.setProgress(++progress / (double) total);
+			}
+		}
+	}
+}
