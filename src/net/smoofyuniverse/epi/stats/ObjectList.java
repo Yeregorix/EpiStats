@@ -26,9 +26,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -38,6 +36,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.epi.api.GuildInfo;
 import net.smoofyuniverse.epi.api.PlayerInfo;
@@ -209,24 +208,11 @@ public class ObjectList {
 		return new UpdateTask();
 	}
 	
-	public boolean add(PlayerInfo p) {
-		if (p.guild == null)
-			return this.players.add(p.id);
-		
-		if (this.guilds.contains(p.guild.toLowerCase()))
-			return this.players.add(p.id);
-		
-		GuildInfo g = GuildInfo.get(p.guild).orElse(null);
-		if (g == null)
-			return this.players.add(p.id);
-		
-		this.guilds.add(g.name.toLowerCase());
-		for (UUID id : g.members)
-			this.players.add(id);
-		return true;
+	public boolean addPlayer(PlayerInfo p) {
+		return this.players.add(p.id);
 	}
 	
-	public boolean add(GuildInfo g) {
+	public boolean addGuild(GuildInfo g) {
 		if (this.guilds.add(g.name.toLowerCase())) {
 			for (UUID id : g.members)
 				this.players.add(id);
@@ -235,11 +221,11 @@ public class ObjectList {
 		return false;
 	}
 	
-	public boolean remove(PlayerInfo p) {
+	public boolean removePlayer(PlayerInfo p) {
 		return this.players.remove(p.id);
 	}
 	
-	public boolean remove(GuildInfo g) {
+	public boolean removeGuild(GuildInfo g) {
 		if (this.guilds.remove(g.name.toLowerCase())) {
 			for (UUID id : g.members)
 				this.players.remove(id);
@@ -259,12 +245,18 @@ public class ObjectList {
 			progress = 0;
 			total = ObjectList.this.guilds.size();
 			
-			List<GuildInfo> guilds = new ArrayList<>(total);
+			Set<GuildInfo> newGuilds = new HashSet<>();
+			
 			for (String name : ObjectList.this.guilds) {
 				if (task.isCancelled())
 					return;
 				task.setMessage("Guilde: " + name);
-				GuildInfo.get(name).ifPresent(guilds::add);
+				GuildInfo g = GuildInfo.get(name).orElse(null);
+				if (g != null) {
+					newGuilds.add(g);
+					for (UUID id : g.members)
+						ObjectList.this.players.remove(id);
+				}
 				task.setProgress(++progress / (double) total);
 			}
 			ObjectList.this.guilds.clear();
@@ -274,12 +266,24 @@ public class ObjectList {
 			progress = 0;
 			total = ObjectList.this.players.size();
 			
-			List<PlayerInfo> players = new ArrayList<>(total);
+			Set<PlayerInfo> newPlayers = new HashSet<>();
+			
 			for (UUID id : ObjectList.this.players) {
 				if (task.isCancelled())
 					return;
 				task.setMessage("Joueur: " + id);
-				PlayerInfo.get(id, false).ifPresent(players::add);
+				PlayerInfo p = PlayerInfo.get(id, false).orElse(null);
+				if (p != null) {
+					if (p.guild == null)
+						newPlayers.add(p);
+					else {
+						GuildInfo g = GuildInfo.get(p.guild).orElse(null);
+						if (g == null)
+							newPlayers.add(p);
+						else
+							newGuilds.add(g);
+					}
+				}
 				task.setProgress(++progress / (double) total);
 			}
 			ObjectList.this.players.clear();
@@ -287,26 +291,26 @@ public class ObjectList {
 			task.setTitle("Mise à jour de la liste des guildes ..");
 			task.setProgress(0);
 			progress = 0;
-			total = guilds.size();
+			total = newGuilds.size();
 			
-			for (GuildInfo g : guilds) {
+			for (GuildInfo g : newGuilds) {
 				if (task.isCancelled())
 					return;
 				task.setMessage("Guilde: " + g.name);
-				add(g);
+				addGuild(g);
 				task.setProgress(++progress / (double) total);
 			}
 			
 			task.setTitle("Mise à jour de la liste des joueurs ..");
 			task.setProgress(0);
 			progress = 0;
-			total = players.size();
+			total = newPlayers.size();
 			
-			for (PlayerInfo p : players) {
+			for (PlayerInfo p : newPlayers) {
 				if (task.isCancelled())
 					return;
 				task.setMessage("Joueur: " + p.name);
-				add(p);
+				addPlayer(p);
 				task.setProgress(++progress / (double) total);
 			}
 		}

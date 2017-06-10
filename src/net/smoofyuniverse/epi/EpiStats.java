@@ -47,7 +47,7 @@ public class EpiStats extends Application {
 	}
 	
 	public EpiStats(Arguments args) {
-		super(args, "EpiStats", "1.0.0-beta3");
+		super(args, "EpiStats", "1.0.0-beta4");
 		initServices(Executors.newSingleThreadExecutor());
 		
 		System.setProperty("java.net.preferIPv4Stack", "true");

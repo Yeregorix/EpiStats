@@ -95,7 +95,7 @@ public final class StatsGenerationPanel extends GridPane {
 				PlayerInfo p = PlayerInfo.get(arg, false).orElse(null);
 				if (p == null)
 					Popup.info().title("Données introuvables").message("Aucune donnée n'a pu être récupérée pour le pseudo : " + arg).showAndWait();
-				else if (this.list.add(p))
+				else if (this.list.addPlayer(p))
 					saveObjectList();
 				else
 					Popup.info().title("Données déjà existantes").message("Le joueur spécifié est déjà contenu dans la liste.").showAndWait();
@@ -110,7 +110,7 @@ public final class StatsGenerationPanel extends GridPane {
 				GuildInfo g = GuildInfo.get(arg).orElse(null);
 				if (g == null)
 					Popup.info().title("Données introuvables").message("Aucune donnée n'a pu être récupérée pour la guilde : " + arg).showAndWait();
-				else if (this.list.add(g))
+				else if (this.list.addGuild(g))
 					saveObjectList();
 				else
 					Popup.info().title("Données déjà existantes").message("La guilde spécifiée est déjà contenu dans la liste.").showAndWait();
@@ -124,7 +124,7 @@ public final class StatsGenerationPanel extends GridPane {
 					return;
 				this.epi.getExecutor().submit(() -> {
 					PlayerInfo p = PlayerInfo.get(arg, false).orElse(null);
-					if (p == null || !this.list.remove(p))
+					if (p == null || !this.list.removePlayer(p))
 						Popup.info().title("Données introuvables").message("Le joueur spécifié n'est pas contenu dans la liste.").showAndWait();
 					else
 						saveObjectList();
@@ -139,7 +139,7 @@ public final class StatsGenerationPanel extends GridPane {
 					return;
 				this.epi.getExecutor().submit(() -> {
 					GuildInfo g = GuildInfo.get(arg).orElse(null);
-					if (g == null || !this.list.remove(g))
+					if (g == null || !this.list.removeGuild(g))
 						Popup.info().title("Données introuvables").message("La guilde spécifiée n'est pas contenu dans la liste.").showAndWait();
 					else
 						saveObjectList();
