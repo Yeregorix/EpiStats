@@ -28,9 +28,9 @@ public class EpiStats extends Application {
 	public EpiStats(Arguments args) {
 		super(args, "EpiStats", "1.0.0-beta3");
 		initServices(Executors.newSingleThreadExecutor());
-		installKeyStore();
 		
 		System.setProperty("java.net.preferIPv4Stack", "true");
+		installKeyStore();
 		
 		this.objectList = new ObjectList(getWorkingDirectory().resolve("objects.olist"));
 		try {
