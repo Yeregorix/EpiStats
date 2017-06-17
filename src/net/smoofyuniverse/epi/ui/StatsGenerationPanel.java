@@ -180,7 +180,7 @@ public final class StatsGenerationPanel extends GridPane {
 		
 		this.refreshL.setOnAction((ev) -> {
 			if (Popup.confirmation().title("Attention").message("Actualiser peut être très long pour des quantités importantes de données !\nEtes-vous sûr de vouloir continuer ?").submitAndWait()) {
-				if (Popup.consumer(this.list.update()).title("Actualisation des données ..").submitAndWait())
+				if (Popup.consumer(this.list::refresh).title("Actualisation des données ..").submitAndWait())
 					saveObjectList();
 				else {
 					try {

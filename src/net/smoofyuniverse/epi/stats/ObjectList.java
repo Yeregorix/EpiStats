@@ -29,8 +29,6 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Consumer;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -204,8 +202,82 @@ public class ObjectList {
 		json.writeEndObject();
 	}
 	
-	public Consumer<ObservableTask> update() {
-		return new UpdateTask();
+	public void refresh(ObservableTask task) {
+		int progress, total;
+		
+		task.setTitle("Collecte des données des guildes ..");
+		task.setProgress(0);
+		progress = 0;
+		total = this.guilds.size();
+		
+		Set<GuildInfo> newGuilds = new HashSet<>();
+		
+		for (String name : this.guilds) {
+			if (task.isCancelled())
+				return;
+			task.setMessage("Guilde: " + name);
+			GuildInfo g = GuildInfo.get(name).orElse(null);
+			if (g != null) {
+				newGuilds.add(g);
+				for (UUID id : g.members)
+					this.players.remove(id);
+			}
+			task.setProgress(++progress / (double) total);
+		}
+		this.guilds.clear();
+		
+		task.setTitle("Collecte des données des joueurs ..");
+		task.setProgress(0);
+		progress = 0;
+		total = this.players.size();
+		
+		Set<PlayerInfo> newPlayers = new HashSet<>();
+		
+		for (UUID id : this.players) {
+			if (task.isCancelled())
+				return;
+			task.setMessage("Joueur: " + id);
+			PlayerInfo p = PlayerInfo.get(id, false).orElse(null);
+			if (p != null) {
+				if (p.guild == null)
+					newPlayers.add(p);
+				else {
+					GuildInfo g = GuildInfo.get(p.guild).orElse(null);
+					if (g == null)
+						newPlayers.add(p);
+					else
+						newGuilds.add(g);
+				}
+			}
+			task.setProgress(++progress / (double) total);
+		}
+		this.players.clear();
+		
+		task.setTitle("Mise à jour de la liste des guildes ..");
+		task.setProgress(0);
+		progress = 0;
+		total = newGuilds.size();
+		
+		for (GuildInfo g : newGuilds) {
+			if (task.isCancelled())
+				return;
+			task.setMessage("Guilde: " + g.name);
+			addGuild(g);
+			task.setProgress(++progress / (double) total);
+		}
+		
+		task.setTitle("Mise à jour de la liste des joueurs ..");
+		task.setProgress(0);
+		progress = 0;
+		total = newPlayers.size();
+		
+		for (PlayerInfo p : newPlayers) {
+			if (task.isCancelled())
+				return;
+			task.setMessage("Joueur: " + p.name);
+			addPlayer(p);
+			task.setProgress(++progress / (double) total);
+		}
 	}
 	
 	public boolean addPlayer(PlayerInfo p) {
@@ -232,87 +304,5 @@ public class ObjectList {
 			return true;
 		}
 		return false;
-	}
-	
-	private class UpdateTask implements Consumer<ObservableTask> {
-
-		@Override
-		public void accept(ObservableTask task) {
-			int progress, total;
-			
-			task.setTitle("Collecte des données des guildes ..");
-			task.setProgress(0);
-			progress = 0;
-			total = ObjectList.this.guilds.size();
-			
-			Set<GuildInfo> newGuilds = new HashSet<>();
-			
-			for (String name : ObjectList.this.guilds) {
-				if (task.isCancelled())
-					return;
-				task.setMessage("Guilde: " + name);
-				GuildInfo g = GuildInfo.get(name).orElse(null);
-				if (g != null) {
-					newGuilds.add(g);
-					for (UUID id : g.members)
-						ObjectList.this.players.remove(id);
-				}
-				task.setProgress(++progress / (double) total);
-			}
-			ObjectList.this.guilds.clear();
-			
-			task.setTitle("Collecte des données des joueurs ..");
-			task.setProgress(0);
-			progress = 0;
-			total = ObjectList.this.players.size();
-			
-			Set<PlayerInfo> newPlayers = new HashSet<>();
-			
-			for (UUID id : ObjectList.this.players) {
-				if (task.isCancelled())
-					return;
-				task.setMessage("Joueur: " + id);
-				PlayerInfo p = PlayerInfo.get(id, false).orElse(null);
-				if (p != null) {
-					if (p.guild == null)
-						newPlayers.add(p);
-					else {
-						GuildInfo g = GuildInfo.get(p.guild).orElse(null);
-						if (g == null)
-							newPlayers.add(p);
-						else
-							newGuilds.add(g);
-					}
-				}
-				task.setProgress(++progress / (double) total);
-			}
-			ObjectList.this.players.clear();
-			
-			task.setTitle("Mise à jour de la liste des guildes ..");
-			task.setProgress(0);
-			progress = 0;
-			total = newGuilds.size();
-			
-			for (GuildInfo g : newGuilds) {
-				if (task.isCancelled())
-					return;
-				task.setMessage("Guilde: " + g.name);
-				addGuild(g);
-				task.setProgress(++progress / (double) total);
-			}
-			
-			task.setTitle("Mise à jour de la liste des joueurs ..");
-			task.setProgress(0);
-			progress = 0;
-			total = newPlayers.size();
-			
-			for (PlayerInfo p : newPlayers) {
-				if (task.isCancelled())
-					return;
-				task.setMessage("Joueur: " + p.name);
-				addPlayer(p);
-				task.setProgress(++progress / (double) total);
-			}
-		}
 	}
 }
