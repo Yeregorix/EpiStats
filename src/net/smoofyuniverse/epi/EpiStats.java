@@ -43,7 +43,7 @@ public class EpiStats extends Application {
 	}
 	
 	public EpiStats(Arguments args) {
-		super(args, "EpiStats", "1.0.0-beta5");
+		super(args, "EpiStats", "1.0.0-beta6");
 		initServices(Executors.newSingleThreadExecutor());
 		
 		this.objectList = new ObjectList(getWorkingDirectory().resolve("objects.olist"));
