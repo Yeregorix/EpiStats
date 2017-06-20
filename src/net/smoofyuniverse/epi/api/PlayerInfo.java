@@ -36,6 +36,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.download.ConnectionConfiguration;
 import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.DownloadUtil;
 
@@ -50,15 +51,15 @@ public class PlayerInfo {
 	public UUID id;
 	
 	public void read(String playerName, boolean stats) throws MalformedURLException, IOException {
-		read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")));
+		read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
 	}
 	
 	public void read(UUID playerId, boolean stats) throws MalformedURLException, IOException {
-		read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")));
+		read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
 	}
 	
-	private void read(URL url) throws IOException {
-		HttpURLConnection co = DownloadUtil.openHttpConnection(url);
+	private void read(URL url, ConnectionConfiguration config) throws IOException {
+		HttpURLConnection co = config.openHttpConnection(url);
 		co.connect();
 
 		int code = co.getResponseCode();
