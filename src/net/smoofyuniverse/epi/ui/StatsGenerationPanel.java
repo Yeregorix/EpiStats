@@ -200,6 +200,9 @@ public final class StatsGenerationPanel extends GridPane {
 		
 		this.generate.setDisable(true);
 		this.generate.setOnAction((a) -> {
+			if (this.list.players.isEmpty())
+				return;
+			
 			if (Popup.confirmation().title("Attention").message("Générer les classements peut être très long pour des quantités importantes de données !\nEtes-vous sûr de vouloir continuer ?").submitAndWait()) {
 				Consumer<ObservableTask> consumer = (task) -> {
 					if (this.infosCache == null) {

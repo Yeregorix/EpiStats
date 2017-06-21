@@ -31,10 +31,11 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+
 import org.mariuszgromada.math.mxparser.Function;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -51,7 +52,7 @@ public class RankingList {
 	
 	private static final JsonFactory factory = new JsonFactory();
 	
-	private Map<String, Ranking> rankings = new HashMap<>();
+	private Map<String, Ranking> rankings = new TreeMap<>();
 	private String[] players;
 	private Instant date;
 	
