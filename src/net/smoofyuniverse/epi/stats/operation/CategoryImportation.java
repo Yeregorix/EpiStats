@@ -37,7 +37,9 @@ public class CategoryImportation implements RankingOperation {
 
 	@Override
 	public void accept(RankingList list, ObservableTask task) {
-		task.setTitle("Importation de la catégorie '" + this.category + "' ..");
+		boolean all = this.category.equals("*");
+		
+		task.setTitle(all ? "Importation de toutes les catégories .." : "Importation de la catégorie '" + this.category + "' ..");
 		task.setProgress(0);
 		
 		int total = list.infosCache.length;
@@ -47,13 +49,25 @@ public class CategoryImportation implements RankingOperation {
 			PlayerInfo p = list.infosCache[i];
 			task.setMessage("Joueur: " + p.name);
 			
-			Map<String, Double> stats = p.stats.get(this.category);
-			if (stats != null) {
-				for (Entry<String, Double> e : stats.entrySet()) {
-					String key = e.getKey();
-					if (key.startsWith("stat_"))
-						key = key.substring(5);
-					list.getOrCreate(this.category + "_" + key).put(i, e.getValue());
+			if (all) {
+				for (Entry<String, Map<String, Double>> stats : p.stats.entrySet()) {
+					String category = stats.getKey();
+					for (Entry<String, Double> e : stats.getValue().entrySet()) {
+						String key = e.getKey();
+						if (key.startsWith("stat_"))
+							key = key.substring(5);
+						list.getOrCreate(category + "_" + key).put(i, e.getValue());
+					}
+				}
+			} else {
+				Map<String, Double> stats = p.stats.get(this.category);
+				if (stats != null) {
+					for (Entry<String, Double> e : stats.entrySet()) {
+						String key = e.getKey();
+						if (key.startsWith("stat_"))
+							key = key.substring(5);
+						list.getOrCreate(this.category + "_" + key).put(i, e.getValue());
+					}
 				}
 			}
 			
