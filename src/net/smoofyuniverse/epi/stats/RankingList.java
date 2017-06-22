@@ -31,12 +31,16 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 
 import org.mariuszgromada.math.mxparser.Function;
+import org.mariuszgromada.math.mxparser.FunctionExtension;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -58,6 +62,7 @@ public class RankingList {
 	
 	public PlayerInfo[] infosCache;
 	
+	private Set<String> totalExtensions = new HashSet<>();
 	private Function[] functions;
 	
 	public RankingList(String[] players) {
@@ -77,8 +82,21 @@ public class RankingList {
 			r = new Ranking(this, name, this.players.length);
 			this.rankings.put(name, r);
 			this.functions = null;
+			
+			String[] parts = name.split("_");
+			if (parts.length > 1)
+				totalExtensions.add(parts[1]);
 		}
 		return r;
+	}
+	
+	public double total(Predicate<String> category, int player) {
+		double total = 0;
+		for (Ranking r : this.rankings.values()) {
+			if (category.test(r.name))
+				total += r.getValue(player);
+		}
+		return total;
 	}
 	
 	public Instant getDate() {
@@ -99,11 +117,14 @@ public class RankingList {
 	
 	public Function[] getFunctions() {
 		if (this.functions == null) {
-			this.functions = new Function[this.rankings.size() *2];
+			this.functions = new Function[this.rankings.size() *2 + this.totalExtensions.size()];
 			int i = 0;
 			for (Ranking r : this.rankings.values()) {
 				this.functions[i++] = r.getFunction;
 				this.functions[i++] = r.rankFunction;
+			}
+			for (String s : this.totalExtensions) {
+				this.functions[i++] = new Function("total_" + s, new TotalExtension(s));
 			}
 		}
 		return this.functions;
@@ -403,5 +424,40 @@ public class RankingList {
 			throw new IllegalStateException("Players was not provided");
 		
 		return l;
+	}
+	
+	public class TotalExtension implements FunctionExtension {
+		public final String name;
+		public int player;
+		
+		public TotalExtension(String name) {
+			this.name = name;
+		}
+
+		@Override
+		public double calculate(double... params) {
+			return total((s) -> {
+				String[] parts = s.split("_");
+				if (parts.length > 1)
+					return parts[1].equals(this.name);
+				return false;
+			}, this.player);
+		}
+
+		@Override
+		public FunctionExtension clone() {
+			return this;
+		}
+
+		@Override
+		public int getParametersNumber() {
+			return 1;
+		}
+
+		@Override
+		public void setParameterValue(int index, double param) {
+			if (index == 0)
+				this.player = (int) param;
+		}
 	}
 }
