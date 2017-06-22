@@ -88,7 +88,7 @@ public final class StatsGenerationPanel extends GridPane {
 		this.generate.setPrefWidth(Integer.MAX_VALUE);
 		
 		this.addP.setOnAction((e) -> {
-			String arg = Popup.textInput().title("Ajouter").message("Ajouter un joueur et sa guilde:").showAndWait().orElse("");
+			String arg = Popup.textInput().title("Ajouter").message("Ajouter un joueur:").showAndWait().orElse("");
 			if (arg.isEmpty())
 				return;
 			this.epi.getExecutor().submit(() -> {
