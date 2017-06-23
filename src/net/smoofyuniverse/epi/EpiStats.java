@@ -22,6 +22,7 @@
 package net.smoofyuniverse.epi;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.Executors;
 
 import javafx.application.Platform;
@@ -37,6 +38,7 @@ import net.smoofyuniverse.epi.ui.UserInterface;
 
 public class EpiStats extends Application {
 	private ObjectList objectList;
+	private Path editorFile;
 	
 	public static void main(String[] args) {
 		new EpiStats(Arguments.parse(args));
@@ -52,6 +54,8 @@ public class EpiStats extends Application {
 		} catch (IOException e) {
 			getLogger().warn("Failed to read object list from file objects.olist", e);
 		}
+		
+		this.editorFile = getWorkingDirectory().resolve("editor.txt");
 		
 		Platform.runLater(() -> {
 			initStage(1000, 600, true, ResourceUtil.loadImage("favicon.png"));
@@ -71,5 +75,9 @@ public class EpiStats extends Application {
 	
 	public ObjectList getObjectList() {
 		return this.objectList;
+	}
+	
+	public Path getEditorFile() {
+		return this.editorFile;
 	}
 }

@@ -23,12 +23,13 @@ package net.smoofyuniverse.epi.ui;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
-
 import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -86,6 +87,8 @@ public final class StatsGenerationPanel extends GridPane {
 		
 		this.editor.setPrefSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
 		this.generate.setPrefWidth(Integer.MAX_VALUE);
+		
+		loadEditor();
 		
 		this.addP.setOnAction((e) -> {
 			String arg = Popup.textInput().title("Ajouter").message("Ajouter un joueur:").showAndWait().orElse("");
@@ -196,6 +199,7 @@ public final class StatsGenerationPanel extends GridPane {
 		this.editor.textProperty().addListener((v, oldV, newV) -> {
 			this.operation = RankingOperation.parseAll(newV).orElse(null);
 			this.generate.setDisable(this.operation == null);
+			saveEditor();
 		});
 		
 		this.generate.setDisable(true);
@@ -303,6 +307,24 @@ public final class StatsGenerationPanel extends GridPane {
 			Popup.error().title("Erreur de sauvegarde").header("Une erreur est survenue lors de la sauvegarde de la liste d'objets").message(e).show();
 			logger.error("Failed to save object list to file " + file.getFileName(), e);
 			return false;
+		}
+	}
+	
+	private void loadEditor() {
+		if (!Files.exists(this.epi.getEditorFile()))
+			return;
+		try {
+			this.editor.setText(new String(Files.readAllBytes(this.epi.getEditorFile()), StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			logger.warn("Failed to load editor file", e);
+		}
+	}
+	
+	private void saveEditor() {
+		try {
+			Files.write(this.epi.getEditorFile(), this.editor.getText().getBytes(StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			logger.warn("Failed to save editor file", e);
 		}
 	}
 }
