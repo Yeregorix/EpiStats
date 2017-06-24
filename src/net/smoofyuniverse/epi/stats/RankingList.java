@@ -246,6 +246,14 @@ public class RankingList {
 	}
 	
 	public void saveCSV(BufferedWriter out) throws IOException {
+		out.write("Dates");
+		out.write(',');
+		Instant[] extremums = getDateExtremums();
+		StringUtil.DATETIME_FORMAT.formatTo(extremums[0], out);
+		out.write(',');
+		StringUtil.DATETIME_FORMAT.formatTo(extremums[1], out);
+		out.newLine();
+		
 		Ranking[] rankings = new Ranking[this.rankings.size()];
 		Iterator<Integer>[] iterators = new Iterator[rankings.length];
 		
