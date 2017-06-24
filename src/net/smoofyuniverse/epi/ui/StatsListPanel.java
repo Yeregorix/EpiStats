@@ -24,6 +24,7 @@ package net.smoofyuniverse.epi.ui;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.Optional;
 
@@ -50,7 +51,7 @@ import net.smoofyuniverse.epi.stats.RankingList;
 public final class StatsListPanel extends GridPane {
 	private static final Logger logger = Application.getLogger("UserInterface");
 	
-	private Label rankingsL = new Label("Catégories:"), indexL = new Label("Index:"), searchL = new Label("Rechercher:"), dateL = new Label("Date:"), date = new Label();
+	private Label rankingsL = new Label("Catégories:"), indexL = new Label("Index:"), searchL = new Label("Rechercher:"), dateL = new Label("Dates:"), date = new Label();
 	private ListView<Ranking> rankings = new ListView<>();
 	private IntegerField index = new IntegerField(0);
 	private TextField search = new TextField();
@@ -71,7 +72,7 @@ public final class StatsListPanel extends GridPane {
 		this.open.setPrefWidth(Integer.MAX_VALUE);
 		this.save.setPrefWidth(Integer.MAX_VALUE);
 		
-		this.rankings.setCellFactory(l -> new LabelCell<>(r -> r.name));
+		this.rankings.setCellFactory(l -> new LabelCell<>((i, r) -> r.name));
 		this.rankings.getSelectionModel().selectedItemProperty().addListener((v, oldV, newV) -> {
 			if (newV != null)
 				this.ui.getStatsListView().open(newV);
@@ -106,7 +107,7 @@ public final class StatsListPanel extends GridPane {
 			Iterator<Integer> it = r.iterator();
 			while (it.hasNext()) {
 				int p = it.next();
-				String n = this.list.getPlayerName(p);
+				String n = this.list.getPlayer(p).name;
 				if (n.toLowerCase().startsWith(name)) {
 					this.index.valueProperty().set(i +1);
 					break;
@@ -160,7 +161,7 @@ public final class StatsListPanel extends GridPane {
 		setHgap(4);
 		
 		add(this.dateL, 0, 0);
-		add(this.date, 1, 0);
+		add(this.date, 1, 0, 3, 1);
 		
 		add(this.rankingsL, 0, 1);
 		add(this.rankings, 1, 1, 3, 1);
@@ -196,7 +197,9 @@ public final class StatsListPanel extends GridPane {
 				this.rankings.getItems().setAll(list.getRankings());
 				if (list.getRankings().size() != 0)
 					this.rankings.getSelectionModel().select(0);
-				this.date.setText(StringUtil.DATETIME_FORMAT.format(list.getDate()));
+				
+				Instant[] extremums = list.getDateExtremums();
+				this.date.setText("Du " + StringUtil.DATETIME_FORMAT.format(extremums[0]) + " au " + StringUtil.DATETIME_FORMAT.format(extremums[1]));
 			}
 		} else
 			Platform.runLater(() -> open(list));

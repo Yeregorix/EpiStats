@@ -35,7 +35,7 @@ public final class StatsListView extends ListView<Integer> {
 	public StatsListView(UserInterface ui) {
 		this.ui = ui;
 		
-		setCellFactory(l -> new LabelCell<>(p -> "%index% - " + this.ranking.parent.getPlayerName(p) + ": " + this.ranking.getValue(p)));
+		setCellFactory(l -> new LabelCell<>((i, p) -> (i +1) + " - " + this.ranking.parent.getPlayer(p).name + ": " + this.ranking.getValue(p)));
 		getSelectionModel().selectedIndexProperty().addListener((v, oldV, newV) -> {
 			this.ui.getStatsListPanel().setSelectedIndex(newV.intValue());
 		});

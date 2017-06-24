@@ -56,7 +56,7 @@ public class CategoryGeneration implements RankingOperation {
 		for (int i = 0; i < total; i++) {
 			if (task.isCancelled())
 				return;
-			PlayerInfo p = list.infosCache[i];
+			PlayerInfo p = list.getPlayer(i);
 			task.setMessage("Joueur: " + p.name);
 			this.arg.setArgumentValue(i);
 			r.put(i, this.expression.calculate());

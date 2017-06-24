@@ -64,7 +64,6 @@ public final class StatsGenerationPanel extends GridPane {
 	
 	private RankingOperation operation;
 	private PlayerInfo[] infosCache;
-	private String[] namesCache;
 	
 	private EpiStats epi;
 	private ObjectList list;
@@ -89,6 +88,7 @@ public final class StatsGenerationPanel extends GridPane {
 		this.generate.setPrefWidth(Integer.MAX_VALUE);
 		
 		loadEditor();
+		parseEditor();
 		
 		this.addP.setOnAction((e) -> {
 			String arg = Popup.textInput().title("Ajouter").message("Ajouter un joueur:").showAndWait().orElse("");
@@ -197,12 +197,10 @@ public final class StatsGenerationPanel extends GridPane {
 		});
 		
 		this.editor.textProperty().addListener((v, oldV, newV) -> {
-			this.operation = RankingOperation.parseAll(newV).orElse(null);
-			this.generate.setDisable(this.operation == null);
+			parseEditor();
 			saveEditor();
 		});
 		
-		this.generate.setDisable(true);
 		this.generate.setOnAction((a) -> {
 			if (this.list.players.isEmpty())
 				return;
@@ -226,25 +224,10 @@ public final class StatsGenerationPanel extends GridPane {
 							task.setProgress(++progress / (double) total);
 						}
 						
-						task.setTitle("Génération de la liste des joueurs ..");
-						task.setProgress(0);
-						progress = 0;
-						total = this.list.players.size();
-						
-						this.infosCache = new PlayerInfo[players.size()];
-						this.namesCache = new String[players.size()];
-						for (PlayerInfo p : players) {
-							if (task.isCancelled())
-								return;
-							task.setMessage("Joueur: " + p.name);
-							this.infosCache[progress] = p;
-							this.namesCache[progress] = p.name;
-							task.setProgress(++progress / (double) total);
-						}
+						this.infosCache = players.toArray(new PlayerInfo[players.size()]);
 					}
 					
-					RankingList l = new RankingList(this.namesCache);
-					l.infosCache = this.infosCache;
+					RankingList l = new RankingList(this.infosCache);
 					
 					try {
 						this.operation.accept(l, task);
@@ -254,7 +237,7 @@ public final class StatsGenerationPanel extends GridPane {
 					}
 					
 					Popup.info().title("Génération terminée").message("Un classement contenant " + l.getRankings().size() + " " + (l.getRankings().size() > 1 ? "catégories" : "catégorie")
-							+ " a été généré avec " + l.infosCache.length + " " + (l.infosCache.length > 1 ? "joueurs" : "joueur") + ".").show();
+							+ " a été généré avec " + l.getPlayerCount() + " " + (l.getPlayerCount() > 1 ? "joueurs" : "joueur") + ".").show();
 					this.ui.getStatsListPanel().open(l);
 				};
 				
@@ -289,7 +272,6 @@ public final class StatsGenerationPanel extends GridPane {
 			this.guilds.setText(Integer.toString(this.list.guilds.size()));
 			
 			this.infosCache = null;
-			this.namesCache = null;
 		} else
 			Platform.runLater(this::updateObjectList);
 	}
@@ -326,5 +308,10 @@ public final class StatsGenerationPanel extends GridPane {
 		} catch (IOException e) {
 			logger.warn("Failed to save editor file", e);
 		}
+	}
+	
+	private void parseEditor() {
+		this.operation = RankingOperation.parseAll(this.editor.getText()).orElse(null);
+		this.generate.setDisable(this.operation == null);
 	}
 }

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -49,6 +50,8 @@ public class PlayerInfo {
 	public Map<String, Map<String, Double>> stats;
 	public String name, guild;
 	public UUID id;
+	
+	public Instant date;
 	
 	public void read(String playerName, boolean stats) throws MalformedURLException, IOException {
 		read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
@@ -157,6 +160,7 @@ public class PlayerInfo {
 		try {
 			PlayerInfo p = new PlayerInfo();
 			p.read(playerName, stats);
+			p.date = Instant.now();
 			return Optional.of(p);
 		} catch (IOException e) {
 			logger.error("Failed to get json content for player '" + playerName + "'", e);
@@ -168,6 +172,7 @@ public class PlayerInfo {
 		try {
 			PlayerInfo p = new PlayerInfo();
 			p.read(playerId, stats);
+			p.date = Instant.now();
 			return Optional.of(p);
 		} catch (IOException e) {
 			logger.error("Failed to get json content for player '" + playerId + "'", e);

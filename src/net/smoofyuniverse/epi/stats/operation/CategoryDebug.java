@@ -65,7 +65,7 @@ public class CategoryDebug implements RankingOperation {
 		Iterator<Integer> it = r.iterator();
 		while (it.hasNext()) {
 			int p = it.next();
-			logger.debug(i + " - " + r.parent.getPlayerName(p) + ": " + r.getValue(p));
+			logger.debug(i + " - " + r.parent.getPlayer(p).name + ": " + r.getValue(p));
 			i++;
 		}
 	}

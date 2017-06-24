@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import org.mariuszgromada.math.mxparser.Function;
@@ -52,26 +53,20 @@ import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 
 public class RankingList {
-	public static final int FORMAT_VERSION = 1;
+	public static final int FORMAT_VERSION = 2;
 	
 	private static final JsonFactory factory = new JsonFactory();
 	
 	private Map<String, Ranking> rankings = new TreeMap<>();
-	private String[] players;
-	private Instant date;
+	private PlayerInfo[] players;
 	
-	public PlayerInfo[] infosCache;
+	private Instant[] dateExtremums;
 	
 	private Set<String> totalExtensions = new HashSet<>();
 	private Function[] functions;
 	
-	public RankingList(String[] players) {
-		this(players, Instant.now());
-	}
-	
-	public RankingList(String[] players, Instant date) {
+	public RankingList(PlayerInfo[] players) {
 		this.players = players;
-		this.date = date;
 	}
 	
 	private RankingList() {}
@@ -99,20 +94,30 @@ public class RankingList {
 		return total;
 	}
 	
-	public Instant getDate() {
-		return this.date;
-	}
-	
 	public int getPlayerCount() {
 		return this.players.length;
 	}
 	
-	public String getPlayerName(int p) {
+	public PlayerInfo getPlayer(int p) {
 		return this.players[p];
 	}
 	
 	public Collection<Ranking> getRankings() {
 		return this.rankings.values();
+	}
+	
+	public Instant[] getDateExtremums() {
+		if (this.dateExtremums == null) {
+			Instant min = null, max = null;
+			for (PlayerInfo p : this.players) {
+				if (min == null || p.date.isBefore(min))
+					min = p.date;
+				if (max == null || p.date.isAfter(max))
+					max = p.date;
+			}
+			this.dateExtremums = new Instant[] {min, max};
+		}
+		return this.dateExtremums;
 	}
 	
 	public Function[] getFunctions() {
@@ -152,12 +157,19 @@ public class RankingList {
 	public void save(DataOutputStream out) throws IOException {
 		out.writeInt(FORMAT_VERSION);
 		
-		out.writeLong(this.date.toEpochMilli());
-		
 		int total = this.players.length;
 		out.writeInt(total);
-		for (String p : this.players)
-			out.writeUTF(p);
+		for (PlayerInfo p : this.players) {
+			if (p.id == null) {
+				out.writeLong(0);
+				out.writeLong(0);
+			} else {
+				out.writeLong(p.id.getMostSignificantBits());
+				out.writeLong(p.id.getLeastSignificantBits());
+			}
+			out.writeUTF(p.name);
+			out.writeLong(p.date.toEpochMilli());
+		}
 		
 		out.writeInt(this.rankings.size());
 		for (Ranking r : this.rankings.values()) {
@@ -182,13 +194,25 @@ public class RankingList {
 		json.writeFieldName("format_version");
 		json.writeNumber(FORMAT_VERSION);
 		
-		json.writeFieldName("date");
-		json.writeString(StringUtil.DATETIME_FORMAT.format(this.date));
-		
 		json.writeFieldName("players");
 		json.writeStartArray();
-		for (String p : this.players)
-			json.writeString(p);
+		for (PlayerInfo p : this.players) {
+			json.writeStartObject();
+			
+			json.writeFieldName("id");
+			if (p.id == null)
+				json.writeNull();
+			else
+				json.writeString(p.id.toString());
+			
+			json.writeFieldName("name");
+			json.writeString(p.name);
+			
+			json.writeFieldName("date");
+			json.writeString(StringUtil.DATETIME_FORMAT.format(p.date));
+			
+			json.writeEndObject();
+		}
 		json.writeEndArray();
 		
 		json.writeFieldName("rankings");
@@ -222,11 +246,6 @@ public class RankingList {
 	}
 	
 	public void saveCSV(BufferedWriter out) throws IOException {
-		out.write("Date");
-		out.write(',');
-		StringUtil.DATETIME_FORMAT.formatTo(this.date, out);
-		out.newLine();
-		
 		Ranking[] rankings = new Ranking[this.rankings.size()];
 		Iterator<Integer>[] iterators = new Iterator[rankings.length];
 		
@@ -253,7 +272,7 @@ public class RankingList {
 				if (it.hasNext()) {
 					int p = it.next();
 					out.write(',');
-					out.write(this.players[p]);
+					out.write(this.players[p].name);
 					out.write(',');
 					out.write(Double.toString(rankings[i].getValue(p)));
 				} else {
@@ -281,16 +300,35 @@ public class RankingList {
 	
 	public static RankingList read(DataInputStream in) throws IOException {
 		int version = in.readInt();
-		if (version != FORMAT_VERSION)
+		boolean old1 = version == 1; // Compatibility with older versions
+		if (version != FORMAT_VERSION && !old1)
 			throw new IOException("Invalid format version: " + version);
 		
-		Instant date = Instant.ofEpochMilli(in.readLong());
+		PlayerInfo[] players;
+		if (old1) {
+			Instant date = Instant.ofEpochMilli(in.readLong());
+			
+			players = new PlayerInfo[in.readInt()];
+			for (int i = 0; i < players.length; i++) {
+				PlayerInfo p = new PlayerInfo();
+				p.name = in.readUTF();
+				p.date = date;
+				players[i] = p;
+			}
+		} else {
+			players = new PlayerInfo[in.readInt()];
+			for (int i = 0; i < players.length; i++) {
+				PlayerInfo p = new PlayerInfo();
+				long most = in.readLong(), least = in.readLong();
+				if (most != 0 || least != 0)
+					p.id = new UUID(most, least);
+				p.name = in.readUTF();
+				p.date = Instant.ofEpochMilli(in.readLong());
+				players[i] = p;
+			}
+		}
 		
-		String[] players = new String[in.readInt()];
-		for (int i = 0; i < players.length; i++)
-			players[i] = in.readUTF();
-		
-		RankingList l = new RankingList(players, date);
+		RankingList l = new RankingList(players);
 		int rankings = in.readInt();
 		for (int i = 0; i < rankings; i++) {
 			Ranking r = new Ranking(l, in.readUTF(), players.length);
@@ -311,6 +349,9 @@ public class RankingList {
 		
 		RankingList l = new RankingList();
 		
+		boolean old1 = false; // Compatibility with older versions
+		Instant date = null;
+		
 		boolean versionCheck = true;
 		while (json.nextToken() != JsonToken.END_OBJECT) {
 			String field = json.getCurrentName();
@@ -320,18 +361,19 @@ public class RankingList {
 					throw new IOException("Format version not provided");
 				
 				int version = json.getIntValue();
-				if (version != FORMAT_VERSION)
+				old1 = version == 1;
+				if (version != FORMAT_VERSION && !old1)
 					throw new IOException("Invalid format version: " + version);
 				
 				versionCheck = false;
 				continue;
 			}
 			
-			if (field.equals("date")) {
+			if (old1 && field.equals("date")) {
 				if (json.nextToken() != JsonToken.VALUE_STRING)
 					throw new JsonParseException(json, "Field 'date' was expected to be a string");
 				
-				l.date = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
+				date = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
 				continue;
 			}
 			
@@ -339,12 +381,53 @@ public class RankingList {
 				if (json.nextToken() != JsonToken.START_ARRAY)
 					throw new JsonParseException(json, "Field 'players' was expected to be an array");
 				
-				List<String> newPlayers = new ArrayList<>();
+				List<PlayerInfo> newPlayers = new ArrayList<>();
 				
-				while (json.nextToken() != JsonToken.END_ARRAY)
-					newPlayers.add(json.getValueAsString());
+				if (old1) {
+					if (date == null)
+						throw new IllegalStateException("Date was not provided");
+					
+					while (json.nextToken() != JsonToken.END_ARRAY) {
+						PlayerInfo p = new PlayerInfo();
+						p.name = json.getValueAsString();
+						p.date = date;
+						newPlayers.add(p);
+					}
+				} else {
+					while (json.nextToken() != JsonToken.END_ARRAY) {
+						if (json.currentToken() != JsonToken.START_OBJECT)
+							throw new JsonParseException(json, "Expected to start a new player object");
+						
+						PlayerInfo p = new PlayerInfo();
+						
+						while (json.nextToken() != JsonToken.END_OBJECT) {
+							String field2 = json.getCurrentName();
+							
+							if (field2.equals("id")) {
+								p.id = UUID.fromString(json.getValueAsString());
+								continue;
+							}
+							
+							if (field2.equals("name")) {
+								p.name = json.getValueAsString();
+								continue;
+							}
+							
+							if (field2.equals("date")) {
+								p.date = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
+								continue;
+							}
+							
+							json.nextToken();
+							json.skipChildren();
+						}
+						
+						newPlayers.add(p);
+					}
+					Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
+				}
 				
-				l.players = newPlayers.toArray(new String[newPlayers.size()]);
+				l.players = newPlayers.toArray(new PlayerInfo[newPlayers.size()]);
 				continue;
 			}
 			
@@ -418,11 +501,8 @@ public class RankingList {
 			json.skipChildren();
 		}
 		
-		if (l.date == null)
-			throw new IllegalStateException("Date was not provided");
 		if (l.players == null)
 			throw new IllegalStateException("Players was not provided");
-		
 		return l;
 	}
 	

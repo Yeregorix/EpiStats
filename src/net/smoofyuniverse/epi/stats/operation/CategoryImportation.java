@@ -42,11 +42,11 @@ public class CategoryImportation implements RankingOperation {
 		task.setTitle(all ? "Importation de toutes les catégories .." : "Importation de la catégorie '" + this.category + "' ..");
 		task.setProgress(0);
 		
-		int total = list.infosCache.length;
+		int total = list.getPlayerCount();
 		for (int i = 0; i < total; i++) {
 			if (task.isCancelled())
 				return;
-			PlayerInfo p = list.infosCache[i];
+			PlayerInfo p = list.getPlayer(i);
 			task.setMessage("Joueur: " + p.name);
 			
 			if (all) {
