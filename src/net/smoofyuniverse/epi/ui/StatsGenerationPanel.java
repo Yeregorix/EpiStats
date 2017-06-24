@@ -21,11 +21,14 @@
  ******************************************************************************/
 package net.smoofyuniverse.epi.ui;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,6 +37,7 @@ import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
@@ -43,6 +47,7 @@ import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.GridUtil;
+import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.GuildInfo;
 import net.smoofyuniverse.epi.api.PlayerInfo;
@@ -60,19 +65,23 @@ public final class StatsGenerationPanel extends GridPane {
 	private Button removeP = new Button("Retirer"), removeG = new Button("Retirer");
 	private Button clearL = new Button("Vider"), importL = new Button("Importer"), exportL = new Button("Exporter"), refreshL = new Button("Actualiser");
 	private TextArea editor = new TextArea();
+	private Label cacheL = new Label("Cache:");
+	private TextField cacheAge = new TextField();
 	private Button generate = new Button("Générer");
 	
 	private RankingOperation operation;
-	private PlayerInfo[] infosCache;
+	private Duration maxAge;
 	
 	private EpiStats epi;
 	private ObjectList list;
 	private UserInterface ui;
+	private Path saveFile;
 	
-	public StatsGenerationPanel(EpiStats epi, UserInterface ui) {
+	public StatsGenerationPanel(EpiStats epi, UserInterface ui, Path saveFile) {
 		this.epi = epi;
 		this.list = epi.getObjectList();
 		this.ui = ui;
+		this.saveFile = saveFile;
 		
 		this.addP.setPrefWidth(Integer.MAX_VALUE);
 		this.addG.setPrefWidth(Integer.MAX_VALUE);
@@ -85,10 +94,12 @@ public final class StatsGenerationPanel extends GridPane {
 		this.refreshL.setPrefWidth(Integer.MAX_VALUE);
 		
 		this.editor.setPrefSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
+		this.cacheAge.setPrefWidth(Integer.MAX_VALUE);
 		this.generate.setPrefWidth(Integer.MAX_VALUE);
 		
-		loadEditor();
+		loadUI();
 		parseEditor();
+		parseCacheAge();
 		
 		this.addP.setOnAction((e) -> {
 			String arg = Popup.textInput().title("Ajouter").message("Ajouter un joueur:").showAndWait().orElse("");
@@ -198,7 +209,13 @@ public final class StatsGenerationPanel extends GridPane {
 		
 		this.editor.textProperty().addListener((v, oldV, newV) -> {
 			parseEditor();
-			saveEditor();
+			saveUI();
+		});
+		
+		this.cacheAge.setPromptText("Âge maximum (défaut: 1d)");
+		this.cacheAge.textProperty().addListener((v, oldV, newV) -> {
+			parseCacheAge();
+			saveUI();
 		});
 		
 		this.generate.setOnAction((a) -> {
@@ -206,28 +223,36 @@ public final class StatsGenerationPanel extends GridPane {
 				return;
 			
 			if (Popup.confirmation().title("Attention").message("Générer les classements peut être très long pour des quantités importantes de données !\nEtes-vous sûr de vouloir continuer ?").submitAndWait()) {
+				Instant minDate = Instant.now().minus(this.maxAge);
+				
 				Consumer<ObservableTask> consumer = (task) -> {
-					if (this.infosCache == null) {
-						int progress, total;
+					int progress, total;
+					
+					task.setTitle("Collecte des données des joueurs ..");
+					task.setProgress(0);
+					progress = 0;
+					total = this.list.players.size();
+					
+					List<PlayerInfo> players = new ArrayList<>(total);
+					for (UUID id : this.list.players) {
+						if (task.isCancelled())
+							return;
+						task.setMessage("Joueur: " + id);
 						
-						task.setTitle("Collecte des données des joueurs ..");
-						task.setProgress(0);
-						progress = 0;
-						total = this.list.players.size();
+						PlayerInfo p = this.epi.getCache().read(id).orElse(null);
+						if (p == null || p.date.isBefore(minDate)) {
+							p = PlayerInfo.get(id, true).orElse(null);
+							if (p != null) {
+								this.epi.getCache().save(p);
+								players.add(p);
+							}
+						} else
+							players.add(p);
 						
-						List<PlayerInfo> players = new ArrayList<>(total);
-						for (UUID id : this.list.players) {
-							if (task.isCancelled())
-								return;
-							task.setMessage("Joueur: " + id);
-							PlayerInfo.get(id, true).ifPresent(players::add);
-							task.setProgress(++progress / (double) total);
-						}
-						
-						this.infosCache = players.toArray(new PlayerInfo[players.size()]);
+						task.setProgress(++progress / (double) total);
 					}
 					
-					RankingList l = new RankingList(this.infosCache);
+					RankingList l = new RankingList(players.toArray(new PlayerInfo[players.size()]));
 					
 					try {
 						this.operation.accept(l, task);
@@ -258,8 +283,12 @@ public final class StatsGenerationPanel extends GridPane {
 		add(this.removeG, 3, 1);
 		
 		add(new HBox(4, this.clearL, this.importL, this.exportL, this.refreshL), 0, 2, 4, 1);
+		
 		add(this.editor, 0, 3, 4, 1);
-		add(this.generate, 0, 4, 4, 1);
+		
+		add(this.cacheL, 0, 4);
+		add(this.cacheAge, 1, 4);
+		add(this.generate, 2, 4, 2, 1);
 		
 		getColumnConstraints().addAll(GridUtil.createColumn(15), GridUtil.createColumn(35), GridUtil.createColumn(25), GridUtil.createColumn(25));
 		
@@ -270,8 +299,6 @@ public final class StatsGenerationPanel extends GridPane {
 		if (Platform.isFxApplicationThread()) {
 			this.players.setText(Integer.toString(this.list.players.size()));
 			this.guilds.setText(Integer.toString(this.list.guilds.size()));
-			
-			this.infosCache = null;
 		} else
 			Platform.runLater(this::updateObjectList);
 	}
@@ -292,26 +319,38 @@ public final class StatsGenerationPanel extends GridPane {
 		}
 	}
 	
-	private void loadEditor() {
-		if (!Files.exists(this.epi.getEditorFile()))
+	private void loadUI() {
+		if (!Files.exists(this.saveFile))
 			return;
-		try {
-			this.editor.setText(new String(Files.readAllBytes(this.epi.getEditorFile()), StandardCharsets.UTF_8));
+		try (DataInputStream in = new DataInputStream(Files.newInputStream(this.saveFile))) {
+			this.editor.setText(in.readUTF());
+			this.cacheAge.setText(in.readUTF());
 		} catch (IOException e) {
-			logger.warn("Failed to load editor file", e);
+			logger.warn("Failed to load ui from file", e);
 		}
 	}
 	
-	private void saveEditor() {
-		try {
-			Files.write(this.epi.getEditorFile(), this.editor.getText().getBytes(StandardCharsets.UTF_8));
+	private void saveUI() {
+		try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(this.saveFile))) {
+			out.writeUTF(this.editor.getText());
+			out.writeUTF(this.cacheAge.getText());
 		} catch (IOException e) {
-			logger.warn("Failed to save editor file", e);
+			logger.warn("Failed to save ui to file", e);
 		}
 	}
 	
 	private void parseEditor() {
 		this.operation = RankingOperation.parseAll(this.editor.getText()).orElse(null);
-		this.generate.setDisable(this.operation == null);
+		validateGeneration();
+	}
+	
+	private void parseCacheAge() {
+		String s = this.cacheAge.getText();
+		this.maxAge = s.isEmpty() ? Duration.ofDays(1) : StringUtil.parseDuration(s);
+		validateGeneration();
+	}
+	
+	private void validateGeneration() {
+		this.generate.setDisable(this.operation == null || this.maxAge == Duration.ZERO);
 	}
 }

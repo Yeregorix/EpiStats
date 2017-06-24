@@ -33,12 +33,13 @@ import javafx.scene.input.KeyCode;
 import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.app.Arguments;
 import net.smoofyuniverse.common.util.ResourceUtil;
+import net.smoofyuniverse.epi.api.PlayerCache;
 import net.smoofyuniverse.epi.stats.ObjectList;
 import net.smoofyuniverse.epi.ui.UserInterface;
 
 public class EpiStats extends Application {
 	private ObjectList objectList;
-	private Path editorFile;
+	private PlayerCache cache;
 	
 	public static void main(String[] args) {
 		new EpiStats(Arguments.parse(args));
@@ -48,18 +49,19 @@ public class EpiStats extends Application {
 		super(args, "EpiStats", "1.0.0-beta8");
 		initServices(Executors.newSingleThreadExecutor());
 		
-		this.objectList = new ObjectList(getWorkingDirectory().resolve("objects.olist"));
+		Path dir = getWorkingDirectory();
+		this.objectList = new ObjectList(dir.resolve("objects.olist"));
 		try {
 			this.objectList.read();
 		} catch (IOException e) {
 			getLogger().warn("Failed to read object list from file objects.olist", e);
 		}
 		
-		this.editorFile = getWorkingDirectory().resolve("editor.txt");
+		this.cache = new PlayerCache(dir.resolve("cache/"));
 		
 		Platform.runLater(() -> {
 			initStage(1000, 600, true, ResourceUtil.loadImage("favicon.png"));
-			setScene(new UserInterface(this)).show();
+			setScene(new UserInterface(this, dir.resolve("ui.dat"))).show();
 			Scene sc = getStage().getScene();
 			sc.setOnKeyPressed((e) -> {
 				if (e.getCode() == KeyCode.ENTER) {
@@ -77,7 +79,7 @@ public class EpiStats extends Application {
 		return this.objectList;
 	}
 	
-	public Path getEditorFile() {
-		return this.editorFile;
+	public PlayerCache getCache() {
+		return this.cache;
 	}
 }

@@ -21,6 +21,8 @@
  ******************************************************************************/
 package net.smoofyuniverse.epi.ui;
 
+import java.nio.file.Path;
+
 import javafx.geometry.Insets;
 import javafx.scene.layout.GridPane;
 import net.smoofyuniverse.common.util.GridUtil;
@@ -31,8 +33,8 @@ public final class UserInterface extends GridPane {
 	private StatsListPanel statsList;
 	private StatsListView statsView;
 	
-	public UserInterface(EpiStats epi) {
-		this.statsGen = new StatsGenerationPanel(epi, this);
+	public UserInterface(EpiStats epi, Path genPanelSaveFile) {
+		this.statsGen = new StatsGenerationPanel(epi, this, genPanelSaveFile);
 		this.statsList = new StatsListPanel(epi, this);
 		this.statsView = new StatsListView(this);
 		

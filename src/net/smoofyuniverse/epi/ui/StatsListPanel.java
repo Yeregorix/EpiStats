@@ -97,6 +97,7 @@ public final class StatsListPanel extends GridPane {
 			}
 		});
 		
+		this.search.setPromptText("Joueur");
 		this.search.textProperty().addListener((v, oldV, newV) -> {
 			Ranking r = this.ui.getStatsListView().currentRanking().orElse(null);
 			if (r == null || this.list == null)
