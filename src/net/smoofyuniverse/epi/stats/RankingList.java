@@ -78,9 +78,9 @@ public class RankingList {
 			this.rankings.put(name, r);
 			this.functions = null;
 			
-			String[] parts = name.split("_");
-			if (parts.length > 1)
-				totalExtensions.add(parts[1]);
+			int i = name.indexOf('_');
+			if (i != -1)
+				this.totalExtensions.add(name.substring(i +1));
 		}
 		return r;
 	}
@@ -517,10 +517,10 @@ public class RankingList {
 		@Override
 		public double calculate(double... params) {
 			return total((s) -> {
-				String[] parts = s.split("_");
-				if (parts.length > 1)
-					return parts[1].equals(this.name);
-				return false;
+				int i = s.indexOf('_');
+				if (i == -1)
+					return false;
+				return s.substring(i +1).equals(this.name);
 			}, this.player);
 		}
 
