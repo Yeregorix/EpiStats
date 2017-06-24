@@ -46,7 +46,7 @@ public class EpiStats extends Application {
 	}
 	
 	public EpiStats(Arguments args) {
-		super(args, "EpiStats", "1.0.0-beta8");
+		super(args, "EpiStats", "1.1.0");
 		initServices(Executors.newSingleThreadExecutor());
 		
 		Path dir = getWorkingDirectory();
