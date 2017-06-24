@@ -109,6 +109,8 @@ public class PlayerCache {
 		p.id = new UUID(in.readLong(), in.readLong());
 		p.name = in.readUTF();
 		p.guild = in.readUTF();
+		if (p.guild.isEmpty())
+			p.guild = null;
 		p.date = Instant.ofEpochMilli(in.readLong());
 		
 		p.stats = new HashMap<>();
@@ -146,7 +148,7 @@ public class PlayerCache {
 		out.writeLong(p.id.getMostSignificantBits());
 		out.writeLong(p.id.getLeastSignificantBits());
 		out.writeUTF(p.name);
-		out.writeUTF(p.guild);
+		out.writeUTF(p.guild == null ? "" : p.guild);
 		out.writeLong(p.date.toEpochMilli());
 		
 		out.writeInt(p.stats.size());
