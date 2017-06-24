@@ -23,8 +23,14 @@ package net.smoofyuniverse.epi.ui;
 
 import java.util.Optional;
 
+import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import net.smoofyuniverse.common.fxui.control.LabelCell;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.GridPane;
+import net.smoofyuniverse.common.fxui.control.AbstractListCell;
+import net.smoofyuniverse.common.util.GridUtil;
+import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.stats.Ranking;
 
 public final class StatsListView extends ListView<Integer> {
@@ -35,7 +41,7 @@ public final class StatsListView extends ListView<Integer> {
 	public StatsListView(UserInterface ui) {
 		this.ui = ui;
 		
-		setCellFactory(l -> new LabelCell<>((i, p) -> (i +1) + " - " + this.ranking.parent.getPlayer(p).name + ": " + this.ranking.getValue(p)));
+		setCellFactory(l -> new StatsListCell());
 		getSelectionModel().selectedIndexProperty().addListener((v, oldV, newV) -> {
 			this.ui.getStatsListPanel().setSelectedIndex(newV.intValue());
 		});
@@ -51,5 +57,33 @@ public final class StatsListView extends ListView<Integer> {
 			getItems().clear();
 		else
 			getItems().setAll(r.collection());
+	}
+	
+	private class StatsListCell extends AbstractListCell<Integer> {
+		private Label index = new Label(), name = new Label(), value = new Label();
+		private GridPane content = new GridPane();
+		private Tooltip tooltip = new Tooltip();
+		
+		public StatsListCell() {
+			setTooltip(this.tooltip);
+			
+			this.content.add(this.index, 0, 0);
+			this.content.add(this.name, 1, 0);
+			this.content.add(this.value, 2, 0);
+			
+			this.content.getColumnConstraints().addAll(GridUtil.createColumn(20), GridUtil.createColumn(40), GridUtil.createColumn(40));
+		}
+		
+		@Override
+		protected Node getContent() {
+			int p = getItem();
+			
+			this.index.setText("#" + (getIndex() +1));
+			this.name.setText(StatsListView.this.ranking.parent.getPlayer(p).name);
+			this.value.setText(Double.toString(StatsListView.this.ranking.getValue(p)));
+			this.tooltip.setText(StringUtil.DATETIME_FORMAT.format(StatsListView.this.ranking.parent.getPlayer(p).date));
+			
+			return this.content;
+		}
 	}
 }

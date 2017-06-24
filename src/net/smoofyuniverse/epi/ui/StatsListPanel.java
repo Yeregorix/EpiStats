@@ -25,20 +25,27 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import javafx.application.Platform;
 import javafx.geometry.VPos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import net.smoofyuniverse.common.app.Application;
-import net.smoofyuniverse.common.fxui.control.LabelCell;
+import net.smoofyuniverse.common.fxui.control.AbstractTreeCell;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.fxui.field.IntegerField;
 import net.smoofyuniverse.common.logger.core.Logger;
@@ -52,7 +59,7 @@ public final class StatsListPanel extends GridPane {
 	private static final Logger logger = Application.getLogger("UserInterface");
 	
 	private Label rankingsL = new Label("Catégories:"), indexL = new Label("Index:"), searchL = new Label("Rechercher:"), dateL = new Label("Dates:"), date = new Label();
-	private ListView<Ranking> rankings = new ListView<>();
+	private TreeView<Object> rankings = new TreeView<>();
 	private IntegerField index = new IntegerField(0);
 	private TextField search = new TextField();
 	private Button open = new Button("Ouvrir"), save = new Button("Sauvegarder");
@@ -67,15 +74,19 @@ public final class StatsListPanel extends GridPane {
 		this.ui = ui;
 		
 		GridPane.setValignment(this.rankingsL, VPos.TOP);
-		this.rankings.setPrefSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
+		
+		this.rankings.setShowRoot(false);
 		
 		this.open.setPrefWidth(Integer.MAX_VALUE);
 		this.save.setPrefWidth(Integer.MAX_VALUE);
 		
-		this.rankings.setCellFactory(l -> new LabelCell<>((i, r) -> r.name));
+		this.rankings.setCellFactory(l -> new RankingTreeCell());
 		this.rankings.getSelectionModel().selectedItemProperty().addListener((v, oldV, newV) -> {
-			if (newV != null)
-				this.ui.getStatsListView().open(newV);
+			if (newV != null) {
+				Object obj = newV.getValue();
+				if (obj instanceof Ranking)
+					this.ui.getStatsListView().open((Ranking) obj);
+			}
 		});
 		
 		this.index.valueProperty().addListener((v, oldV, newV) -> {
@@ -192,10 +203,39 @@ public final class StatsListPanel extends GridPane {
 			this.list = list;
 			
 			if (list == null) {
-				this.rankings.getItems().clear();
+				this.rankings.setRoot(null);
 				this.date.setText(null);
 			} else {
-				this.rankings.getItems().setAll(list.getRankings());
+				Map<String, List<Ranking>> groups = new TreeMap<>();
+				for (Ranking r : list.getRankings()) {
+					int i = r.name.indexOf('_');
+					String parent = i == -1 ? r.name : r.name.substring(0, i);
+					
+					List<Ranking> l = groups.get(parent);
+					if (l == null) {
+						l = new ArrayList<>();
+						groups.put(parent, l);
+					}
+					l.add(r);
+				}
+				
+				TreeItem<Object> root = new TreeItem<>();
+				root.setExpanded(true);
+				for (Entry<String, List<Ranking>> e : groups.entrySet()) {
+					List<Ranking> l = e.getValue();
+					TreeItem<Object> item;
+					if (l.size() == 1)
+						item = new TreeItem<>(l.get(0));
+					else {
+						item = new TreeItem<>(e.getKey());
+						for (Ranking r : l)
+							item.getChildren().add(new TreeItem<>(r));
+					}
+					root.getChildren().add(item);
+				}
+				
+				this.rankings.setRoot(root);
+				
 				if (list.getRankings().size() != 0)
 					this.rankings.getSelectionModel().select(0);
 				
@@ -204,5 +244,16 @@ public final class StatsListPanel extends GridPane {
 			}
 		} else
 			Platform.runLater(() -> open(list));
+	}
+	
+	private class RankingTreeCell extends AbstractTreeCell<Object> {
+		private Label label = new Label();
+
+		@Override
+		protected Node getContent() {
+			Object item = getTreeItem().getValue();
+			this.label.setText(item instanceof Ranking ? ((Ranking) item).name : item.toString());
+			return this.label;
+		}
 	}
 }
