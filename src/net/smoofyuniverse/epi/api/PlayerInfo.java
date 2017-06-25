@@ -53,11 +53,11 @@ public class PlayerInfo {
 	
 	public Instant date;
 	
-	public void read(String playerName, boolean stats) throws MalformedURLException, IOException {
+	public void read(String playerName, boolean stats) throws IOException {
 		read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
 	}
 	
-	public void read(UUID playerId, boolean stats) throws MalformedURLException, IOException {
+	public void read(UUID playerId, boolean stats) throws IOException {
 		read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
 	}
 	

@@ -42,9 +42,7 @@ public final class StatsListView extends ListView<Integer> {
 		this.ui = ui;
 		
 		setCellFactory(l -> new StatsListCell());
-		getSelectionModel().selectedIndexProperty().addListener((v, oldV, newV) -> {
-			this.ui.getStatsListPanel().setSelectedIndex(newV.intValue());
-		});
+		getSelectionModel().selectedIndexProperty().addListener((v, oldV, newV) -> this.ui.getStatsListPanel().setSelectedIndex(newV.intValue()));
 	}
 	
 	public Optional<Ranking> currentRanking() {

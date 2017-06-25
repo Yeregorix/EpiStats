@@ -137,7 +137,7 @@ public class ObjectList {
 					if (p != null) {
 						try {
 							this.players.add(UUID.fromString(p));
-						} catch (Exception e) {}
+						} catch (Exception ignored) {}
 					}
 				}
 				continue;

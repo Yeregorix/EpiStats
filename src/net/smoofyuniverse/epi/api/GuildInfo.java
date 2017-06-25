@@ -49,7 +49,7 @@ public final class GuildInfo {
 	public UUID[] members;
 	public String name;
 	
-	public void read(String guildName) throws MalformedURLException, IOException {
+	public void read(String guildName) throws IOException {
 		read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), Application.get().getConnectionConfig());
 	}
 	

@@ -47,10 +47,8 @@ public class CategoryDebug implements RankingOperation {
 		
 		Collection<Ranking> l = list.getRankings();
 		int total = l.size(), i = 0;
-		
-		Iterator<Ranking> it = l.iterator();
-		while (it.hasNext()) {
-			Ranking r = it.next();
+
+		for (Ranking r : l) {
 			if (this.category.test(r.name)) {
 				task.setMessage("Debug de " + r.name + " ..");
 				debug(r);

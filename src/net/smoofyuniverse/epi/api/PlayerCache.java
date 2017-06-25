@@ -52,7 +52,7 @@ public class PlayerCache {
 		
 		try {
 			Files.createDirectories(dir);
-		} catch (IOException e) {}
+		} catch (IOException ignored) {}
 	}
 	
 	public List<UUID> list() {
@@ -66,7 +66,7 @@ public class PlayerCache {
 				if (fn.endsWith(".pdat")) {
 					try {
 						list.add(UUID.fromString(fn.substring(0, fn.length() -5)));
-					} catch (IllegalArgumentException e) {}
+					} catch (IllegalArgumentException ignored) {}
 				}
 			}
 		} catch (IOException e) {

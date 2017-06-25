@@ -22,7 +22,6 @@
 package net.smoofyuniverse.epi.stats.operation;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.function.Predicate;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.epi.stats.Ranking;
@@ -42,10 +41,8 @@ public class OrderInversion implements RankingOperation {
 		
 		Collection<Ranking> l = list.getRankings();
 		int total = l.size(), i = 0;
-		
-		Iterator<Ranking> it = l.iterator();
-		while (it.hasNext()) {
-			Ranking r = it.next();
+
+		for (Ranking r : l) {
 			if (this.category.test(r.name)) {
 				task.setMessage("Inversion de " + r.name + " ..");
 				r.descendingMode = !r.descendingMode;

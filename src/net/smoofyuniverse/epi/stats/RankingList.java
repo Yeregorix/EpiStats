@@ -526,9 +526,7 @@ public class RankingList {
 		public double calculate(double... params) {
 			return total((s) -> {
 				int i = s.indexOf('_');
-				if (i == -1)
-					return false;
-				return s.substring(i +1).equals(this.name);
+				return i != -1 && s.substring(i + 1).equals(this.name);
 			}, this.player);
 		}
 
