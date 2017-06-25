@@ -43,7 +43,7 @@ public class EpiStats extends Application {
 	private PlayerCache cache;
 	
 	public EpiStats(Arguments args) {
-		super(args, "EpiStats", "1.2.1");
+		super(args, "EpiStats", "1.2.2");
 		initServices(Executors.newSingleThreadExecutor());
 
 		Path dir = getWorkingDirectory();
