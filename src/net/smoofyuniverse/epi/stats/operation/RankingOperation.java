@@ -1,16 +1,16 @@
-/*******************************************************************************
- * Copyright (C) 2017 Hugo Dupanloup (Yeregorix)
- * 
+/*
+ * Copyright (c) 2017 Hugo Dupanloup (Yeregorix)
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,21 +18,19 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- ******************************************************************************/
+ */
+
 package net.smoofyuniverse.epi.stats.operation;
-
-import java.util.Optional;
-
-import org.mariuszgromada.math.mxparser.Expression;
 
 import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.stats.RankingList;
+import org.mariuszgromada.math.mxparser.Expression;
+
+import java.util.Optional;
 
 public interface RankingOperation {
-	public void accept(RankingList list, ObservableTask task) throws OperationException;
-	
 	public static RankingOperation merge(RankingOperation... childs) {
 		return (list, task) -> {
 			int line = 0;
@@ -52,7 +50,7 @@ public interface RankingOperation {
 		String[] args = operation.split("\\s+");
 		if (args.length == 0)
 			return Optional.empty();
-		
+
 		try {
 			switch (args[0]) {
 			case "import":
@@ -93,4 +91,6 @@ public interface RankingOperation {
 		}
 		return Optional.of(merge(childs));
 	}
+
+	public void accept(RankingList list, ObservableTask task) throws OperationException;
 }

@@ -1,16 +1,16 @@
-/*******************************************************************************
- * Copyright (C) 2017 Hugo Dupanloup (Yeregorix)
- * 
+/*
+ * Copyright (c) 2017 Hugo Dupanloup (Yeregorix)
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,8 +18,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- ******************************************************************************/
+ */
+
 package net.smoofyuniverse.epi.stats;
+
+import com.fasterxml.jackson.core.*;
+import net.smoofyuniverse.common.fxui.task.ObservableTask;
+import net.smoofyuniverse.epi.api.GuildInfo;
+import net.smoofyuniverse.epi.api.PlayerInfo;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -29,15 +35,6 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-
-import net.smoofyuniverse.common.fxui.task.ObservableTask;
-import net.smoofyuniverse.epi.api.GuildInfo;
-import net.smoofyuniverse.epi.api.PlayerInfo;
 
 public class ObjectList {
 	public static final int FORMAT_VERSION = 1;

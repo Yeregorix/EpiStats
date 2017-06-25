@@ -1,16 +1,16 @@
-/*******************************************************************************
- * Copyright (C) 2017 Hugo Dupanloup (Yeregorix)
- * 
+/*
+ * Copyright (c) 2017 Hugo Dupanloup (Yeregorix)
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,29 +18,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- ******************************************************************************/
-package net.smoofyuniverse.epi.ui;
+ */
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.TreeMap;
+package net.smoofyuniverse.epi.ui;
 
 import javafx.application.Platform;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -54,6 +39,13 @@ import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.stats.Ranking;
 import net.smoofyuniverse.epi.stats.RankingList;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.*;
+import java.util.Map.Entry;
 
 public final class StatsListPanel extends GridPane {
 	private static final Logger logger = Application.getLogger("UserInterface");
