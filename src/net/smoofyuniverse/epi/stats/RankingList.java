@@ -332,7 +332,7 @@ public class RankingList {
 		return this.dateExtremums;
 	}
 
-	public Argument[] getArguments(AtomicInteger player) {
+	public Argument[] getAllArguments(AtomicInteger player) {
 		Argument[] args = new Argument[this.rankings.size() * 2 + this.extensions.size()];
 		int i = 0;
 		for (Ranking r : this.rankings.values()) {
@@ -342,10 +342,36 @@ public class RankingList {
 				return rank == -1 ? Double.NaN : rank + 1;
 			});
 		}
-		for (String s : this.extensions) {
+		for (String s : this.extensions)
 			args[i++] = new PlayerDependantArgument("total_" + s, player, p -> total(s, p));
-		}
 		return args;
+	}
+
+	public Argument[] getArguments(String expression, AtomicInteger player) {
+		List<Argument> args = new ArrayList<>();
+		boolean rank_ = expression.contains("rank_"), total_ = expression.contains("total_");
+
+		for (Ranking r : this.rankings.values()) {
+			if (!expression.contains(r.name))
+				continue;
+			args.add(new PlayerDependantArgument(r.name, player, r::getValue));
+
+			if (rank_ && expression.contains("rank_" + r.name)) {
+				args.add(new PlayerDependantArgument("rank_" + r.name, player, p -> {
+					int rank = r.getRank(p);
+					return rank == -1 ? Double.NaN : rank + 1;
+				}));
+			}
+		}
+
+		if (total_) {
+			for (String s : this.extensions) {
+				if (expression.contains("total_" + s))
+					args.add(new PlayerDependantArgument("total_" + s, player, p -> total(s, p)));
+			}
+		}
+
+		return args.toArray(new Argument[args.size()]);
 	}
 	
 	public void save(Path file) throws IOException {

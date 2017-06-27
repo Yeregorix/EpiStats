@@ -28,14 +28,22 @@ import net.smoofyuniverse.epi.stats.RankingList;
 import org.mariuszgromada.math.mxparser.Expression;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 public class CategoryGeneration implements RankingOperation {
+	public final static Pattern CATEGORY_NAME = Pattern.compile("([a-zA-Z_])+([a-zA-Z0-9_])*");
+
 	public final String category;
 	public final Expression expression;
 	
 	public CategoryGeneration(String category, Expression expression) {
 		if (category.startsWith("rank_") || category.startsWith("total_"))
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("Keyword in name");
+		if (!CATEGORY_NAME.matcher(category).matches())
+			throw new IllegalArgumentException("Invalid name");
+		if (!expression.checkLexSyntax())
+			throw new IllegalArgumentException("Invalid syntax");
+
 		this.category = category;
 		this.expression = expression;
 	}
@@ -45,12 +53,10 @@ public class CategoryGeneration implements RankingOperation {
 		task.setTitle("Génération de la catégorie '" + this.category + "' ..");
 		task.setProgress(0);
 
-		long time = System.currentTimeMillis();
-
 		AtomicInteger p = new AtomicInteger();
 
 		this.expression.removeAllArguments();
-		this.expression.addArguments(list.getArguments(p));
+		this.expression.addArguments(list.getArguments(this.expression.getExpressionString(), p));
 
 		if (!this.expression.checkSyntax())
 			throw new OperationException(this.expression.getErrorMessage());
