@@ -25,7 +25,7 @@ package net.smoofyuniverse.epi.stats;
 import com.fasterxml.jackson.core.*;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.api.PlayerInfo;
-import org.mariuszgromada.math.mxparser.Function;
+import org.mariuszgromada.math.mxparser.Argument;
 import org.mariuszgromada.math.mxparser.FunctionExtension;
 
 import java.io.*;
@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 public class RankingList {
@@ -44,9 +45,8 @@ public class RankingList {
 	private PlayerInfo[] players;
 	
 	private Instant[] dateExtremums;
-	
-	private Set<String> totalExtensions = new HashSet<>();
-	private Function[] functions;
+
+	private Set<String> extensions = new HashSet<>();
 	
 	public RankingList(PlayerInfo[] players) {
 		this.players = players;
@@ -283,13 +283,19 @@ public class RankingList {
 		if (r == null) {
 			r = new Ranking(this, name, this.players.length);
 			this.rankings.put(name, r);
-			this.functions = null;
 
 			int i = name.indexOf('_');
 			if (i != -1)
-				this.totalExtensions.add(name.substring(i +1));
+				this.extensions.add(name.substring(i + 1));
 		}
 		return r;
+	}
+
+	public double total(String extension, int player) {
+		return total((s) -> {
+			int i = s.indexOf('_');
+			return i != -1 && s.substring(i + 1).equals(extension);
+		}, player);
 	}
 	
 	public double total(Predicate<String> category, int player) {
@@ -326,20 +332,21 @@ public class RankingList {
 		}
 		return this.dateExtremums;
 	}
-	
-	public Function[] getFunctions() {
-		if (this.functions == null) {
-			this.functions = new Function[this.rankings.size() *2 + this.totalExtensions.size()];
-			int i = 0;
-			for (Ranking r : this.rankings.values()) {
-				this.functions[i++] = r.getFunction;
-				this.functions[i++] = r.rankFunction;
-			}
-			for (String s : this.totalExtensions) {
-				this.functions[i++] = new Function("total_" + s, new TotalExtension(s));
-			}
+
+	public Argument[] getArguments(AtomicInteger player) {
+		Argument[] args = new Argument[this.rankings.size() * 2 + this.extensions.size()];
+		int i = 0;
+		for (Ranking r : this.rankings.values()) {
+			args[i++] = new PlayerDependantArgument(r.name, player, r::getValue);
+			args[i++] = new PlayerDependantArgument("rank_" + r.name, player, p -> {
+				int rank = r.getRank(p);
+				return rank == -1 ? Double.NaN : rank + 1;
+			});
 		}
-		return this.functions;
+		for (String s : this.extensions) {
+			args[i++] = new PlayerDependantArgument("total_" + s, player, p -> total(s, p));
+		}
+		return args;
 	}
 	
 	public void save(Path file) throws IOException {
