@@ -22,6 +22,7 @@
 
 package net.smoofyuniverse.epi.ui;
 
+import com.sun.javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -48,6 +49,21 @@ public final class StatsListView extends ListView<Integer> {
 	
 	public Optional<Ranking> currentRanking() {
 		return Optional.ofNullable(this.ranking);
+	}
+
+	public void scrollToVisible(int index) {
+		VirtualFlow<?> flow = (VirtualFlow<?>) lookup(".virtual-flow");
+		int first = flow.getFirstVisibleCell().getIndex();
+		int last = flow.getLastVisibleCell().getIndex();
+		if (index <= first) {
+			while (index <= first && flow.adjustPixels(-1) < 0) {
+				first = flow.getFirstVisibleCell().getIndex();
+			}
+		} else {
+			while (index >= last && flow.adjustPixels(1) > 0) {
+				last = flow.getLastVisibleCell().getIndex();
+			}
+		}
 	}
 	
 	public void open(Ranking r) {

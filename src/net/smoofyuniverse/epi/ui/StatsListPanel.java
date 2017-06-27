@@ -96,7 +96,9 @@ public final class StatsListPanel extends GridPane {
 					i = this.list.getPlayerCount();
 					this.index.valueProperty().set(i);
 				}
+
 				this.ui.getStatsListView().getSelectionModel().select(i -1);
+				this.ui.getStatsListView().scrollToVisible(i - 1);
 			}
 		});
 		
