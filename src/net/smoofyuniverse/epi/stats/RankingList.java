@@ -290,6 +290,18 @@ public class RankingList {
 		return r;
 	}
 
+	public void copy(String name, String newName) {
+		Ranking r = this.rankings.get(name);
+		if (r != null)
+			this.rankings.put(newName, r.copy(newName));
+	}
+
+	public void rename(String name, String newName) {
+		Ranking r = this.rankings.remove(name);
+		if (r != null)
+			this.rankings.put(newName, r.rename(newName));
+	}
+
 	public double total(String extension, int player) {
 		return total((s) -> {
 			int i = s.indexOf('_');

@@ -342,7 +342,12 @@ public final class StatsGenerationPanel extends GridPane {
 	}
 	
 	private void parseEditor() {
-		this.operation = RankingOperation.parseAll(this.editor.getText()).orElse(null);
+		try {
+			this.operation = RankingOperation.parse(this.editor.getText().split("\n"));
+		} catch (Exception e) {
+			logger.debug(e);
+			this.operation = null;
+		}
 		validateGeneration();
 	}
 	

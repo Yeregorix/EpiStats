@@ -27,9 +27,20 @@ import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.stats.RankingList;
 import org.mariuszgromada.math.mxparser.Expression;
 
-import java.util.Optional;
+import java.util.regex.Pattern;
 
 public interface RankingOperation {
+	public final static Pattern CATEGORY_NAME = Pattern.compile("([a-zA-Z_])+([a-zA-Z0-9_])*");
+	public static final RankingOperation EMPTY = (l, t) -> {};
+
+	public static String validateName(String category) {
+		if (category.startsWith("rank_") || category.startsWith("total_"))
+			throw new IllegalArgumentException("Keyword in name");
+		if (!CATEGORY_NAME.matcher(category).matches())
+			throw new IllegalArgumentException("Invalid name");
+		return category;
+	}
+
 	public static RankingOperation merge(RankingOperation... childs) {
 		return (list, task) -> {
 			int line = 0;
@@ -44,50 +55,53 @@ public interface RankingOperation {
 			}
 		};
 	}
-	
-	public static Optional<RankingOperation> parse(String operation) {
-		String[] args = operation.split("\\s+");
-		if (args.length == 0)
-			return Optional.empty();
 
-		try {
-			switch (args[0]) {
+	public static RankingOperation parse(String line) {
+		String[] args = line.split("\\s+");
+		if (args.length == 0 || args[0].isEmpty())
+			return EMPTY;
+
+		switch (args[0]) {
 			case "import":
 				if (args.length == 2)
-					return Optional.of(new CategoryImportation(args[1]));
+					return new ImportCategory(args[1]);
 				break;
 			case "delete":
 				if (args.length == 2)
-					return Optional.of(new CategoryDeletion(StringUtil.simplePredicate(args[1])));
+					return new DeleteCategory(StringUtil.simplePredicate(args[1]));
+				break;
+			case "rename":
+				if (args.length == 3)
+					return new RenameCategory(args[1], args[2]);
+				break;
+			case "copy":
+				if (args.length == 3)
+					return new CopyCategory(args[1], args[2]);
 				break;
 			case "inverse":
 				if (args.length == 2)
-					return Optional.of(new OrderInversion(StringUtil.simplePredicate(args[1])));
+					return new InverseOrder(StringUtil.simplePredicate(args[1]));
 				break;
 			case "debug":
 				if (args.length == 2)
-					return Optional.of(new CategoryDebug(StringUtil.simplePredicate(args[1])));
+					return new DebugCategory(StringUtil.simplePredicate(args[1]));
 				break;
 			case "generate":
 				if (args.length > 2)
-					return Optional.of(new CategoryGeneration(args[1], new Expression(operation.substring(args[1].length() +10))));
+					return new GenerateCategory(args[1], new Expression(line.substring(args[1].length() + 10)));
 				break;
-			}
-		} catch (Exception ignored) {
+			default:
+				throw new IllegalArgumentException("Invalid operation: " + args[0]);
 		}
-		return Optional.empty();
+
+		throw new IllegalArgumentException("Invalid arguments length: " + args.length);
 	}
-	
-	public static Optional<RankingOperation> parseAll(String operations) {
-		String[] lines = operations.split("\n");
+
+	public static RankingOperation parse(String[] lines) {
 		RankingOperation[] childs = new RankingOperation[lines.length];
-		for (int i = 0; i < lines.length; i++) {
-			RankingOperation op = parse(lines[i]).orElse(null);
-			if (op == null)
-				return Optional.empty();
-			childs[i] = op;
-		}
-		return Optional.of(merge(childs));
+		for (int i = 0; i < lines.length; i++)
+			childs[i] = parse(lines[i]);
+		return merge(childs);
 	}
 
 	public void accept(RankingList list, ObservableTask task) throws OperationException;

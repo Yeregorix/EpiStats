@@ -22,21 +22,36 @@
 
 package net.smoofyuniverse.epi.stats;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.TreeSet;
+import java.util.*;
 
-public class Ranking {
+public class Ranking implements Comparator<Integer> {
 	public final RankingList parent;
 	public final String name;
 	public boolean descendingMode;
 	private double[] values;
-	private TreeSet<Integer> players = new TreeSet<>((p1, p2) -> this.values[p1] > this.values[p2] ? -1 : 1);
+	private TreeSet<Integer> players;
 	
 	public Ranking(RankingList parent, String name, int size) {
-		this.values = new double[size];
+		this(new double[size], parent, name);
+		this.players = new TreeSet<>(this);
+	}
+
+	private Ranking(double[] values, RankingList parent, String name) {
+		this.values = values;
 		this.parent = parent;
 		this.name = name;
+	}
+
+	public Ranking copy(String newName) {
+		Ranking r = new Ranking(Arrays.copyOf(this.values, this.values.length), this.parent, newName);
+		r.players = (TreeSet<Integer>) this.players.clone();
+		return r;
+	}
+
+	public Ranking rename(String newName) {
+		Ranking r = new Ranking(this.values, this.parent, newName);
+		r.players = this.players;
+		return r;
 	}
 	
 	public void put(int p, double v) {
@@ -63,5 +78,10 @@ public class Ranking {
 			return r == 0 ? 0 : r - 1;
 		}
 		return -1;
+	}
+
+	@Override
+	public int compare(Integer p1, Integer p2) {
+		return this.values[p1] > this.values[p2] ? -1 : 1;
 	}
 }
