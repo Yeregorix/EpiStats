@@ -26,7 +26,6 @@ import com.fasterxml.jackson.core.*;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 import org.mariuszgromada.math.mxparser.Argument;
-import org.mariuszgromada.math.mxparser.FunctionExtension;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -501,39 +500,6 @@ public class RankingList {
 					out.write(",,");
 				}
 			}
-		}
-	}
-	
-	public class TotalExtension implements FunctionExtension {
-		public final String name;
-		public int player;
-		
-		public TotalExtension(String name) {
-			this.name = name;
-		}
-
-		@Override
-		public double calculate(double... params) {
-			return total((s) -> {
-				int i = s.indexOf('_');
-				return i != -1 && s.substring(i + 1).equals(this.name);
-			}, this.player);
-		}
-
-		@Override
-		public FunctionExtension clone() {
-			return this;
-		}
-
-		@Override
-		public int getParametersNumber() {
-			return 1;
-		}
-
-		@Override
-		public void setParameterValue(int index, double param) {
-			if (index == 0)
-				this.player = (int) param;
 		}
 	}
 }
