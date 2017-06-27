@@ -22,7 +22,6 @@
 
 package net.smoofyuniverse.epi.stats.operation;
 
-import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.stats.RankingList;
@@ -74,8 +73,7 @@ public interface RankingOperation {
 					return Optional.of(new CategoryGeneration(args[1], new Expression(operation.substring(args[1].length() +10))));
 				break;
 			}
-		} catch (Exception e) {
-			Application.getLogger("R").debug(e);
+		} catch (Exception ignored) {
 		}
 		return Optional.empty();
 	}

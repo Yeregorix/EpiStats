@@ -34,6 +34,8 @@ public class CategoryGeneration implements RankingOperation {
 	public final Expression expression;
 	
 	public CategoryGeneration(String category, Expression expression) {
+		if (category.startsWith("rank_") || category.startsWith("total_"))
+			throw new IllegalArgumentException();
 		this.category = category;
 		this.expression = expression;
 	}
