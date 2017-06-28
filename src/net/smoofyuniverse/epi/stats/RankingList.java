@@ -102,7 +102,7 @@ public class RankingList {
 		RankingList l = new RankingList(players);
 		int rankings = in.readInt();
 		for (int i = 0; i < rankings; i++) {
-			Ranking r = new Ranking(l, in.readUTF(), players.length);
+			Ranking r = new Ranking(l, in.readUTF());
 			boolean d = in.readBoolean();
 
 			int size = old2 ? players.length : in.readInt();
@@ -135,7 +135,7 @@ public class RankingList {
 
 				int version = json.getIntValue();
 				old1 = version == 1;
-				if (version != FORMAT_VERSION && !old1)
+				if (version != FORMAT_VERSION && !old1 && version != 2) // old2
 					throw new IOException("Invalid format version: " + version);
 
 				versionCheck = false;
@@ -177,16 +177,25 @@ public class RankingList {
 							String field2 = json.getCurrentName();
 
 							if (field2.equals("id")) {
+								if (json.nextToken() != JsonToken.VALUE_STRING)
+									throw new JsonParseException(json, "Field 'id' of a player was expected to be a string");
+
 								p.id = UUID.fromString(json.getValueAsString());
 								continue;
 							}
 
 							if (field2.equals("name")) {
+								if (json.nextToken() != JsonToken.VALUE_STRING)
+									throw new JsonParseException(json, "Field 'name' of a player was expected to be a string");
+
 								p.name = json.getValueAsString();
 								continue;
 							}
 
 							if (field2.equals("date")) {
+								if (json.nextToken() != JsonToken.VALUE_STRING)
+									throw new JsonParseException(json, "Field 'date' of a player was expected to be a string");
+
 								p.date = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
 								continue;
 							}
@@ -197,7 +206,6 @@ public class RankingList {
 
 						newPlayers.add(p);
 					}
-					Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
 				}
 
 				l.players = newPlayers.toArray(new PlayerInfo[newPlayers.size()]);
@@ -253,13 +261,18 @@ public class RankingList {
 							}
 						} finally {
 							if (name != null && descending != null && players != null && values != null) {
-								Ranking r = new Ranking(l, name, players.size());
+								Ranking r = new Ranking(l, name);
 
 								for (int i = 0; i < players.size(); i++)
 									r.put(players.get(i), values.get(i));
 
 								r.descendingMode = descending;
 								l.rankings.put(r.name, r);
+
+								name = null;
+								descending = null;
+								players = null;
+								values = null;
 							}
 						}
 
@@ -282,7 +295,7 @@ public class RankingList {
 	public Ranking getOrCreate(String name) {
 		Ranking r = this.rankings.get(name);
 		if (r == null) {
-			r = new Ranking(this, name, this.players.length);
+			r = new Ranking(this, name);
 			this.rankings.put(name, r);
 
 			int i = name.indexOf('_');

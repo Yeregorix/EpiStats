@@ -30,9 +30,9 @@ public class Ranking implements Comparator<Integer> {
 	public boolean descendingMode;
 	private double[] values;
 	private TreeSet<Integer> players;
-	
-	public Ranking(RankingList parent, String name, int size) {
-		this(new double[size], parent, name);
+
+	public Ranking(RankingList parent, String name) {
+		this(new double[parent.getPlayerCount()], parent, name);
 		this.players = new TreeSet<>(this);
 	}
 
