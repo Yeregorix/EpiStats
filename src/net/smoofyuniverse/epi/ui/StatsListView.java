@@ -37,7 +37,7 @@ import java.util.Optional;
 
 public final class StatsListView extends ListView<Integer> {
 	private Ranking ranking;
-	
+
 	private UserInterface ui;
 	
 	public StatsListView(UserInterface ui) {

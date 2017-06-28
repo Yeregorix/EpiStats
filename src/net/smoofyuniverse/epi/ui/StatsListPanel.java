@@ -133,6 +133,7 @@ public final class StatsListPanel extends GridPane {
 			
 			this.epi.getExecutor().submit(() -> {
 				try {
+					logger.debug("Reading ranking list from file ..");
 					open(RankingList.read(file));
 				} catch (IOException e) {
 					Popup.error().title("Erreur de lecture").header("Une erreur est survenue lors de la lecture de la liste de classements").message(e).show();
@@ -155,6 +156,7 @@ public final class StatsListPanel extends GridPane {
 			
 			this.epi.getExecutor().submit(() -> {
 				try {
+					logger.debug("Saving ranking list to file ..");
 					this.list.save(file);
 				} catch (IOException e) {
 					Popup.error().title("Erreur de sauvegarde").header("Une erreur est survenue lors de la sauvegarde de la liste de classements").message(e).show();
@@ -195,11 +197,14 @@ public final class StatsListPanel extends GridPane {
 	public void open(RankingList list) {
 		if (Platform.isFxApplicationThread()) {
 			this.list = list;
+			this.rankings.getSelectionModel().clearSelection();
 			
 			if (list == null) {
 				this.rankings.setRoot(null);
 				this.date.setText(null);
 			} else {
+				logger.info("Loading ranking list in UI ..");
+
 				Map<String, List<Ranking>> groups = new TreeMap<>();
 				for (Ranking r : list.getRankings()) {
 					int i = r.name.indexOf('_');
@@ -229,9 +234,6 @@ public final class StatsListPanel extends GridPane {
 				}
 				
 				this.rankings.setRoot(root);
-				
-				if (list.getRankings().size() != 0)
-					this.rankings.getSelectionModel().select(0);
 				
 				Instant[] extremums = list.getDateExtremums();
 				this.date.setText("Du " + StringUtil.DATETIME_FORMAT.format(extremums[0]) + " au " + StringUtil.DATETIME_FORMAT.format(extremums[1]));

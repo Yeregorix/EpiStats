@@ -111,9 +111,10 @@ public final class StatsGenerationPanel extends GridPane {
 				PlayerInfo p = PlayerInfo.get(arg, false).orElse(null);
 				if (p == null)
 					Popup.info().title("Données introuvables").message("Aucune donnée n'a pu être récupérée pour le pseudo : " + arg).showAndWait();
-				else if (this.list.addPlayer(p))
+				else if (this.list.addPlayer(p)) {
+					logger.debug("Added player: " + p.id);
 					saveObjectList();
-				else
+				} else
 					Popup.info().title("Données déjà existantes").message("Le joueur spécifié est déjà contenu dans la liste.").showAndWait();
 			});
 		});
@@ -126,9 +127,10 @@ public final class StatsGenerationPanel extends GridPane {
 				GuildInfo g = GuildInfo.get(arg).orElse(null);
 				if (g == null)
 					Popup.info().title("Données introuvables").message("Aucune donnée n'a pu être récupérée pour la guilde : " + arg).showAndWait();
-				else if (this.list.addGuild(g))
+				else if (this.list.addGuild(g)) {
+					logger.debug("Added guild: " + g.name);
 					saveObjectList();
-				else
+				} else
 					Popup.info().title("Données déjà existantes").message("La guilde spécifiée est déjà contenu dans la liste.").showAndWait();
 			});
 		});
@@ -142,8 +144,10 @@ public final class StatsGenerationPanel extends GridPane {
 					PlayerInfo p = PlayerInfo.get(arg, false).orElse(null);
 					if (p == null || !this.list.removePlayer(p))
 						Popup.info().title("Données introuvables").message("Le joueur spécifié n'est pas contenu dans la liste.").showAndWait();
-					else
+					else {
+						logger.debug("Removed player: " + p.id);
 						saveObjectList();
+					}
 				});
 			}
 		});
@@ -157,8 +161,10 @@ public final class StatsGenerationPanel extends GridPane {
 					GuildInfo g = GuildInfo.get(arg).orElse(null);
 					if (g == null || !this.list.removeGuild(g))
 						Popup.info().title("Données introuvables").message("La guilde spécifiée n'est pas contenu dans la liste.").showAndWait();
-					else
+					else {
+						logger.debug("Removed guild: " + g.name);
 						saveObjectList();
+					}
 				});
 			}
 		});
@@ -169,6 +175,7 @@ public final class StatsGenerationPanel extends GridPane {
 		this.clearL.setOnAction((e) -> {
 			if (Popup.confirmation().title("Vider").message("Vider retire tout les joueurs et les guildes de la liste.\nEtes-vous sûr de vouloir continuer ?").submitAndWait()) {
 				this.list.clear();
+				logger.debug("Cleared object list.");
 				saveObjectList();
 			}
 		});
@@ -179,6 +186,7 @@ public final class StatsGenerationPanel extends GridPane {
 				return;
 			Path file = f.toPath();
 			try {
+				logger.debug("Reading object list from file ..");
 				this.list.merge(file);
 			} catch (IOException e) {
 				Popup.error().title("Erreur de lecture").header("Une erreur est survenue lors de la lecture de la liste d'objets").message(e).show();
@@ -196,10 +204,13 @@ public final class StatsGenerationPanel extends GridPane {
 		
 		this.refreshL.setOnAction((ev) -> {
 			if (Popup.confirmation().title("Attention").message("Actualiser peut être très long pour des quantités importantes de données !\nEtes-vous sûr de vouloir continuer ?").submitAndWait()) {
-				if (Popup.consumer(this.list::refresh).title("Actualisation des données ..").submitAndWait())
+				logger.info("Starting refresh task ..");
+				if (Popup.consumer(this.list::refresh).title("Actualisation des données ..").submitAndWait()) {
+					logger.info("Refresh task ended.");
 					saveObjectList();
-				else {
+				} else {
 					try {
+						logger.debug("Reading object list from file ..");
 						this.list.read();
 					} catch (IOException e) {
 						logger.error("Failed to read object list from file objects.olist", e);
@@ -228,12 +239,13 @@ public final class StatsGenerationPanel extends GridPane {
 				Instant minDate = Instant.now().minus(this.maxAge);
 				
 				Consumer<ObservableTask> consumer = (task) -> {
-					int progress, total;
-					
+					int progress = 0, total = this.list.players.size();
+
+					logger.info("Collecting data for " + total + " players ..");
 					task.setTitle("Collecte des données des joueurs ..");
 					task.setProgress(0);
-					progress = 0;
-					total = this.list.players.size();
+
+					long time = System.currentTimeMillis();
 					
 					List<PlayerInfo> players = new ArrayList<>(total);
 					for (UUID id : this.list.players) {
@@ -253,16 +265,27 @@ public final class StatsGenerationPanel extends GridPane {
 						
 						task.setProgress(++progress / (double) total);
 					}
-					
+
+					long time2 = System.currentTimeMillis();
+					time = time2 - time;
+
+					logger.info("Collected data of " + players.size() + " players in " + time / 1000F + "s.");
+					logger.info("Generating ranking list ..");
+
 					RankingList l = new RankingList(players.toArray(new PlayerInfo[players.size()]));
 					
 					try {
 						this.operation.accept(l, task);
 					} catch (OperationException e) {
+						logger.warn("Generation was interrupted by an error line " + e.line + ".");
 						Popup.error().title("Erreur de génération").header("Une erreur est survenue ligne " + e.line +".").expandable(new Label(e.getMessage())).show();
 						return;
 					}
-					
+
+					time2 = System.currentTimeMillis() - time2;
+
+					logger.info("Generated ranking list in " + time2 / 1000F + "s.");
+
 					Popup.info().title("Génération terminée").message("Un classement contenant " + l.getRankings().size() + " " + (l.getRankings().size() > 1 ? "catégories" : "catégorie")
 							+ " a été généré avec " + l.getPlayerCount() + " " + (l.getPlayerCount() > 1 ? "joueurs" : "joueur") + ".").show();
 					this.ui.getStatsListPanel().open(l);
@@ -312,6 +335,7 @@ public final class StatsGenerationPanel extends GridPane {
 	
 	private boolean saveObjectList(Path file) {
 		try {
+			logger.debug("Saving object list to file ..");
 			this.list.save(file);
 			return true;
 		} catch (IOException e) {
@@ -345,7 +369,6 @@ public final class StatsGenerationPanel extends GridPane {
 		try {
 			this.operation = RankingOperation.parse(this.editor.getText().split("\n"));
 		} catch (Exception e) {
-			logger.debug(e);
 			this.operation = null;
 		}
 		validateGeneration();
