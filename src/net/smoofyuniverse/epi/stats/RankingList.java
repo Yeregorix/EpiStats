@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 public class RankingList {
-	public static final int FORMAT_VERSION = 2;
+	public static final int FORMAT_VERSION = 3;
 	
 	private static final JsonFactory factory = new JsonFactory();
 	
@@ -71,8 +71,8 @@ public class RankingList {
 
 	public static RankingList read(DataInputStream in) throws IOException {
 		int version = in.readInt();
-		boolean old1 = version == 1; // Compatibility with older versions
-		if (version != FORMAT_VERSION && !old1)
+		boolean old1 = version == 1, old2 = version == 2; // Compatibility with older versions
+		if (version != FORMAT_VERSION && !old1 && !old2)
 			throw new IOException("Invalid format version: " + version);
 
 		PlayerInfo[] players;
@@ -105,12 +105,14 @@ public class RankingList {
 			Ranking r = new Ranking(l, in.readUTF(), players.length);
 			boolean d = in.readBoolean();
 
-			for (int p = 0; p < players.length; p++)
+			int size = old2 ? players.length : in.readInt();
+			for (int p = 0; p < size; p++)
 				r.put(in.readInt(), in.readDouble());
 
 			r.descendingMode = d;
 			l.rankings.put(r.name, r);
 		}
+
 		return l;
 	}
 
@@ -429,6 +431,7 @@ public class RankingList {
 			out.writeBoolean(d);
 
 			r.descendingMode = false;
+			out.writeInt(r.size());
 			Iterator<Integer> it = r.iterator();
 			while (it.hasNext()) {
 				int p = it.next();

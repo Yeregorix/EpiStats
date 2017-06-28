@@ -59,6 +59,10 @@ public class Ranking implements Comparator<Integer> {
 		if (Double.isFinite(v))
 			this.players.add(p);
 	}
+
+	public int size() {
+		return this.players.size();
+	}
 	
 	public Iterator<Integer> iterator() {
 		return this.descendingMode ? this.players.descendingIterator() : this.players.iterator();
