@@ -23,43 +23,113 @@
 package net.smoofyuniverse.epi.ui;
 
 import javafx.geometry.Insets;
+import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.epi.EpiStats;
+import net.smoofyuniverse.epi.api.PlayerCache;
+import net.smoofyuniverse.epi.stats.ObjectList;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class UserInterface extends GridPane {
-	private StatsGenerationPanel statsGen;
-	private StatsListPanel statsList;
-	private StatsListView statsView;
-	
-	public UserInterface(EpiStats epi, Path genPanelSaveFile) {
-		this.statsGen = new StatsGenerationPanel(epi, this, genPanelSaveFile);
-		this.statsList = new StatsListPanel(epi, this);
-		this.statsView = new StatsListView(this);
-		
-		setVgap(15);
+	private static final Logger logger = Application.getLogger("UserInterface");
+
+	private ObjectListPanel objectListPanel;
+	private DataCollectionPanel dataCollectionPanel;
+	private GenerationPanel generationPanel;
+	private RankingListPanel rankingListPanel;
+	private RankingView rankingView;
+
+	private EpiStats epi;
+	private Path saveFile;
+
+	public UserInterface(EpiStats epi, Path saveFile, ObjectList list, PlayerCache cache) {
+		this.epi = epi;
+		this.saveFile = saveFile;
+
+		this.objectListPanel = new ObjectListPanel(this, list);
+		this.dataCollectionPanel = new DataCollectionPanel(this, cache);
+		this.generationPanel = new GenerationPanel(this);
+		this.rankingListPanel = new RankingListPanel(this);
+		this.rankingView = new RankingView(this);
+
+		loadUI();
+
+		this.dataCollectionPanel.getCacheAge().addListener((v, oldV, newV) -> saveUI());
+		this.generationPanel.getEditor().addListener((v, oldV, newV) -> saveUI());
+
+		setVgap(10);
 		setHgap(10);
 		setPadding(new Insets(10));
-		
-		add(this.statsGen, 0, 0);
-		add(this.statsList, 0, 1);
-		add(this.statsView, 1, 0, 1, 2);
+
+		add(this.objectListPanel, 0, 0);
+		add(this.dataCollectionPanel, 0, 1);
+		add(this.generationPanel, 0, 2);
+		add(this.rankingListPanel, 0, 3);
+
+		add(this.rankingView, 1, 0, 1, 4);
 		
 		getColumnConstraints().addAll(GridUtil.createColumn(60), GridUtil.createColumn(40));
-		getRowConstraints().addAll(GridUtil.createRow(60), GridUtil.createRow(40));
+		getRowConstraints().addAll(GridUtil.createRow(), GridUtil.createRow(), GridUtil.createRow(Priority.ALWAYS), GridUtil.createRow(30));
 	}
-	
-	public StatsGenerationPanel getStatsGenerationPanel() {
-		return this.statsGen;
+
+	private void loadUI() {
+		if (!Files.exists(this.saveFile))
+			return;
+		try (DataInputStream in = new DataInputStream(Files.newInputStream(this.saveFile))) {
+			this.generationPanel.getEditor().set(in.readUTF());
+			this.dataCollectionPanel.getCacheAge().set(in.readUTF());
+		} catch (IOException e) {
+			logger.warn("Failed to load ui from file", e);
+		}
 	}
-	
-	public StatsListPanel getStatsListPanel() {
-		return this.statsList;
+
+	private void saveUI() {
+		try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(this.saveFile))) {
+			out.writeUTF(this.generationPanel.getEditor().get());
+			out.writeUTF(this.dataCollectionPanel.getCacheAge().get());
+		} catch (IOException e) {
+			logger.warn("Failed to save ui to file", e);
+		}
 	}
-	
-	public StatsListView getStatsListView() {
-		return this.statsView;
+
+	public EpiStats getEpiStats() {
+		return this.epi;
+	}
+
+	public ObjectListPanel getObjectListPanel() {
+		return this.objectListPanel;
+	}
+
+	public DataCollectionPanel getDataCollectionPanel() {
+		return this.dataCollectionPanel;
+	}
+
+	public GenerationPanel getGenerationPanel() {
+		return this.generationPanel;
+	}
+
+	public RankingListPanel getRankingListPanel() {
+		return this.rankingListPanel;
+	}
+
+	public RankingView getRankingView() {
+		return this.rankingView;
+	}
+
+	protected static Label title(String content) {
+		Label l = new Label(content);
+		l.setFont(Font.font(l.getFont().getName(), FontWeight.BOLD, 16));
+		return l;
 	}
 }

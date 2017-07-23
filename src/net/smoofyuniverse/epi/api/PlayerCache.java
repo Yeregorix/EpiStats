@@ -106,13 +106,13 @@ public class PlayerCache {
 		p.guild = in.readUTF();
 		if (p.guild.isEmpty())
 			p.guild = null;
-		p.date = Instant.ofEpochMilli(in.readLong());
-		
-		p.stats = new HashMap<>();
+		p.endDate = Instant.ofEpochMilli(in.readLong());
+
+		p.endStats = new HashMap<>();
 		int maps = in.readInt();
 		for (int i = 0; i < maps; i++) {
 			Map<String, Double> map = new HashMap<>();
-			p.stats.put(in.readUTF(), map);
+			p.endStats.put(in.readUTF(), map);
 			int stats = in.readInt();
 			for (int y = 0; y < stats; y++)
 				map.put(in.readUTF(), in.readDouble());
@@ -138,16 +138,19 @@ public class PlayerCache {
 	}
 	
 	public void save(PlayerInfo p, DataOutputStream out) throws IOException {
+		if (p.startDate != null || p.startStats != null)
+			throw new IllegalArgumentException("Intervals are not saved");
+
 		out.writeInt(FORMAT_VERSION);
 		
 		out.writeLong(p.id.getMostSignificantBits());
 		out.writeLong(p.id.getLeastSignificantBits());
 		out.writeUTF(p.name);
 		out.writeUTF(p.guild == null ? "" : p.guild);
-		out.writeLong(p.date.toEpochMilli());
-		
-		out.writeInt(p.stats.size());
-		for (Entry<String, Map<String, Double>> e : p.stats.entrySet()) {
+		out.writeLong(p.endDate.toEpochMilli());
+
+		out.writeInt(p.endStats.size());
+		for (Entry<String, Map<String, Double>> e : p.endStats.entrySet()) {
 			out.writeUTF(e.getKey());
 			Map<String, Double> map = e.getValue();
 			out.writeInt(map.size());

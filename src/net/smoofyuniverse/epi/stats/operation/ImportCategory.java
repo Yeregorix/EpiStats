@@ -43,6 +43,7 @@ public class ImportCategory implements RankingOperation {
 		task.setTitle(all ? "Importation de toutes les catégories .." : "Importation de la catégorie '" + this.category + "' ..");
 		task.setProgress(0);
 
+		boolean useIntervals = list.getCollection().containsIntervals();
 		int total = list.getPlayerCount();
 		for (int i = 0; i < total; i++) {
 			if (task.isCancelled())
@@ -51,23 +52,48 @@ public class ImportCategory implements RankingOperation {
 			task.setMessage("Joueur: " + p.name);
 
 			if (all) {
-				for (Entry<String, Map<String, Double>> stats : p.stats.entrySet()) {
+				for (Entry<String, Map<String, Double>> stats : p.endStats.entrySet()) {
 					String category = stats.getKey();
+
+					Map<String, Double> map2 = null;
+					if (useIntervals) {
+						map2 = p.startStats.get(category);
+						if (map2 == null)
+							continue;
+					}
+
 					for (Entry<String, Double> e : stats.getValue().entrySet()) {
 						String key = e.getKey();
-						if (key.startsWith("stat_"))
-							key = key.substring(5);
-						list.getOrCreate(category + "_" + key).put(i, e.getValue());
+						double value = e.getValue();
+
+						if (useIntervals) {
+							Double v2 = map2.get(key);
+							if (v2 == null)
+								continue;
+							value -= v2;
+						}
+
+						list.getOrCreate(category + "_" + (key.startsWith("stat_") ? key.substring(5) : key)).put(i, value);
 					}
 				}
 			} else {
-				Map<String, Double> stats = p.stats.get(this.category);
+				Map<String, Double> stats = p.endStats.get(this.category);
 				if (stats != null) {
-					for (Entry<String, Double> e : stats.entrySet()) {
-						String key = e.getKey();
-						if (key.startsWith("stat_"))
-							key = key.substring(5);
-						list.getOrCreate(this.category + "_" + key).put(i, e.getValue());
+					Map<String, Double> map2 = useIntervals ? p.startStats.get(this.category) : null;
+					if (!useIntervals || map2 != null) {
+						for (Entry<String, Double> e : stats.entrySet()) {
+							String key = e.getKey();
+							double value = e.getValue();
+
+							if (useIntervals) {
+								Double v2 = map2.get(key);
+								if (v2 == null)
+									continue;
+								value -= v2;
+							}
+
+							list.getOrCreate(category + "_" + (key.startsWith("stat_") ? key.substring(5) : key)).put(i, value);
+						}
 					}
 				}
 			}

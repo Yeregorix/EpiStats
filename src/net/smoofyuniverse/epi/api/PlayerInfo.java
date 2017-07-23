@@ -45,25 +45,31 @@ public class PlayerInfo {
 	public static final URL URL_BASE;
 	private static final Logger logger = Application.getLogger("GuildInfo");
 	private static final JsonFactory factory = new JsonFactory();
-
-	static {
-		try {
-			URL_BASE = new URL("https://stats.epicube.fr/player/");
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public Map<String, Map<String, Double>> stats;
+	public Map<String, Map<String, Double>> startStats, endStats;
 	public String name, guild;
 	public UUID id;
-	public Instant date;
+	public Instant startDate, endDate;
+
+	// Not a deep copy
+	public PlayerInfo copy() {
+		PlayerInfo p = new PlayerInfo();
+
+		p.startDate = this.startDate;
+		p.endDate = this.endDate;
+		p.id = this.id;
+		p.name = this.name;
+		p.guild = this.guild;
+		p.startStats = this.startStats;
+		p.endStats = this.endStats;
+
+		return p;
+	}
 
 	public static Optional<PlayerInfo> get(String playerName, boolean stats) {
 		try {
 			PlayerInfo p = new PlayerInfo();
 			p.read(playerName, stats);
-			p.date = Instant.now();
+			p.endDate = Instant.now();
 			return Optional.of(p);
 		} catch (IOException e) {
 			logger.error("Failed to get json content for player '" + playerName + "'", e);
@@ -71,34 +77,10 @@ public class PlayerInfo {
 		}
 	}
 
-	public static Optional<PlayerInfo> get(UUID playerId, boolean stats) {
-		try {
-			PlayerInfo p = new PlayerInfo();
-			p.read(playerId, stats);
-			p.date = Instant.now();
-			return Optional.of(p);
-		} catch (IOException e) {
-			logger.error("Failed to get json content for player '" + playerId + "'", e);
-			return Optional.empty();
-		}
-	}
-
-	public static String idToString(UUID id) {
-		return id.toString().replace("-", "");
-	}
-
-	public static UUID idFromString(String v) {
-		return UUID.fromString(v.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5"));
-	}
-	
 	public void read(String playerName, boolean stats) throws IOException {
 		read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
 	}
-	
-	public void read(UUID playerId, boolean stats) throws IOException {
-		read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
-	}
-	
+
 	private void read(URL url, ConnectionConfiguration config) throws IOException {
 		HttpURLConnection co = config.openHttpConnection(url);
 		co.connect();
@@ -111,7 +93,7 @@ public class PlayerInfo {
 		} else
 			throw new IOException("Invalid response code: " + code);
 	}
-	
+
 	public void read(JsonParser json) throws IOException {
 		if (json.nextToken() != JsonToken.START_OBJECT)
 			throw new IOException("Expected to start an new object");
@@ -165,11 +147,11 @@ public class PlayerInfo {
 				if (json.nextToken() != JsonToken.START_OBJECT)
 					throw new JsonParseException(json, "Field 'stats' was expected to be an object");
 
-				this.stats = new HashMap<>();
+				this.endStats = new HashMap<>();
 
 				while (json.nextToken() != JsonToken.END_OBJECT) {
 					Map<String, Double> map = new HashMap<>();
-					this.stats.put(json.getCurrentName(), map);
+					this.endStats.put(json.getCurrentName(), map);
 
 					if (json.nextToken() != JsonToken.START_OBJECT)
 						throw new JsonParseException(json, "Subfield in 'stats' was expected to be an object");
@@ -187,10 +169,36 @@ public class PlayerInfo {
 			json.skipChildren();
 		}
 	}
-	
-	public void clear() {
-		this.stats = null;
-		this.name = null;
-		this.id = null;
+
+	public static UUID idFromString(String v) {
+		return UUID.fromString(v.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5"));
+	}
+
+	public static Optional<PlayerInfo> get(UUID playerId, boolean stats) {
+		try {
+			PlayerInfo p = new PlayerInfo();
+			p.read(playerId, stats);
+			p.endDate = Instant.now();
+			return Optional.of(p);
+		} catch (IOException e) {
+			logger.error("Failed to get json content for player '" + playerId + "'", e);
+			return Optional.empty();
+		}
+	}
+
+	public void read(UUID playerId, boolean stats) throws IOException {
+		read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
+	}
+
+	public static String idToString(UUID id) {
+		return id.toString().replace("-", "");
+	}
+
+	static {
+		try {
+			URL_BASE = new URL("https://stats.epicube.fr/player/");
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

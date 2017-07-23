@@ -32,7 +32,7 @@ public class Ranking implements Comparator<Integer> {
 	private TreeSet<Integer> players;
 
 	public Ranking(RankingList parent, String name) {
-		this(new double[parent.getPlayerCount()], parent, name);
+		this(new double[parent.getCollection().getPlayerCount()], parent, name);
 		this.players = new TreeSet<>(this);
 	}
 

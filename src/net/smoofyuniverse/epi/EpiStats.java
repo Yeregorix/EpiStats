@@ -34,31 +34,21 @@ import net.smoofyuniverse.epi.api.PlayerCache;
 import net.smoofyuniverse.epi.stats.ObjectList;
 import net.smoofyuniverse.epi.ui.UserInterface;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
 
 public class EpiStats extends Application {
-	private ObjectList objectList;
-	private PlayerCache cache;
-	
+
 	public EpiStats(Arguments args) {
-		super(args, "EpiStats", "1.3.4");
+		super(args, "EpiStats", "1.4.0");
 		initServices(Executors.newSingleThreadExecutor());
 
-		Path dir = getWorkingDirectory();
-		this.objectList = new ObjectList(dir.resolve("objects.olist"));
-		try {
-			this.objectList.read();
-		} catch (IOException e) {
-			getLogger().warn("Failed to read object list from file objects.olist", e);
-		}
-
-		this.cache = new PlayerCache(dir.resolve("cache/"));
-
 		Platform.runLater(() -> {
-			initStage(1000, 600, true, ResourceUtil.loadImage("favicon.png"));
-			setScene(new UserInterface(this, dir.resolve("ui.dat"))).show();
+			initStage(1000, 800, true, ResourceUtil.loadImage("favicon.png"));
+
+			Path dir = getWorkingDirectory();
+			setScene(new UserInterface(this, dir.resolve("ui.dat"), new ObjectList(dir.resolve("objects.olist")), new PlayerCache(dir.resolve("cache/")))).show();
+
 			Scene sc = getStage().getScene();
 			sc.setOnKeyPressed((e) -> {
 				if (e.getCode() == KeyCode.ENTER) {
@@ -70,14 +60,6 @@ public class EpiStats extends Application {
 		});
 
 		checkForUpdate();
-	}
-
-	public ObjectList getObjectList() {
-		return this.objectList;
-	}
-	
-	public PlayerCache getCache() {
-		return this.cache;
 	}
 
 	public static void main(String[] args) {

@@ -44,15 +44,6 @@ public final class GuildInfo {
 	public static final URL URL_BASE;
 	private static final Logger logger = Application.getLogger("GuildInfo");
 	private static final JsonFactory factory = new JsonFactory();
-
-	static {
-		try {
-			URL_BASE = new URL("https://stats.epicube.fr/guild/");
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	public UUID[] members;
 	public String name;
 
@@ -66,7 +57,7 @@ public final class GuildInfo {
 			return Optional.empty();
 		}
 	}
-	
+
 	public void read(String guildName) throws IOException {
 		read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), Application.get().getConnectionConfig());
 	}
@@ -133,9 +124,12 @@ public final class GuildInfo {
 			json.skipChildren();
 		}
 	}
-	
-	public void clear() {
-		this.members = null;
-		this.name = null;
+
+	static {
+		try {
+			URL_BASE = new URL("https://stats.epicube.fr/guild/");
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

@@ -36,22 +36,302 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 public class RankingList {
-	public static final int FORMAT_VERSION = 3;
+	public static final int FORMAT_VERSION = 4;
 	
 	private static final JsonFactory factory = new JsonFactory();
 	
 	private Map<String, Ranking> rankings = new TreeMap<>();
-	private PlayerInfo[] players;
-	
-	private Instant[] dateExtremums;
-
 	private Set<String> extensions = new HashSet<>();
-	
-	public RankingList(PlayerInfo[] players) {
-		this.players = players;
+	private DataCollection collection;
+
+	public RankingList(DataCollection col) {
+		this.collection = col;
 	}
 	
 	private RankingList() {}
+
+	public DataCollection getCollection() {
+		return this.collection;
+	}
+
+	public Ranking getOrCreate(String name) {
+		Ranking r = this.rankings.get(name);
+		if (r == null) {
+			r = new Ranking(this, name);
+			this.rankings.put(name, r);
+
+			int i = name.indexOf('_');
+			if (i != -1)
+				this.extensions.add(name.substring(i + 1));
+		}
+		return r;
+	}
+
+	public void copy(String name, String newName) {
+		Ranking r = this.rankings.get(name);
+		if (r != null)
+			this.rankings.put(newName, r.copy(newName));
+	}
+
+	public void rename(String name, String newName) {
+		Ranking r = this.rankings.remove(name);
+		if (r != null)
+			this.rankings.put(newName, r.rename(newName));
+	}
+
+	public Collection<Ranking> getRankings() {
+		return this.rankings.values();
+	}
+
+	public Argument[] getAllArguments(AtomicInteger player) {
+		Argument[] args = new Argument[this.rankings.size() * 2 + this.extensions.size()];
+		int i = 0;
+		for (Ranking r : this.rankings.values()) {
+			args[i++] = new PlayerDependantArgument(r.name, player, r::getValue);
+			args[i++] = new PlayerDependantArgument("rank_" + r.name, player, p -> {
+				int rank = r.getRank(p);
+				return rank == -1 ? Double.NaN : rank + 1;
+			});
+		}
+		for (String s : this.extensions)
+			args[i++] = new PlayerDependantArgument("total_" + s, player, p -> total(s, p));
+		return args;
+	}
+
+	public double total(String extension, int player) {
+		return total((s) -> {
+			int i = s.indexOf('_');
+			return i != -1 && s.substring(i + 1).equals(extension);
+		}, player);
+	}
+
+	public double total(Predicate<String> category, int player) {
+		double total = 0;
+		for (Ranking r : this.rankings.values()) {
+			if (category.test(r.name))
+				total += r.getValue(player);
+		}
+		return total;
+	}
+	
+	public Argument[] getArguments(String expression, AtomicInteger player) {
+		List<Argument> args = new ArrayList<>();
+		boolean rank_ = expression.contains("rank_"), total_ = expression.contains("total_");
+
+		for (Ranking r : this.rankings.values()) {
+			if (!expression.contains(r.name))
+				continue;
+			args.add(new PlayerDependantArgument(r.name, player, r::getValue));
+
+			if (rank_ && expression.contains("rank_" + r.name)) {
+				args.add(new PlayerDependantArgument("rank_" + r.name, player, p -> {
+					int rank = r.getRank(p);
+					return rank == -1 ? Double.NaN : rank + 1;
+				}));
+			}
+		}
+
+		if (total_) {
+			for (String s : this.extensions) {
+				if (expression.contains("total_" + s))
+					args.add(new PlayerDependantArgument("total_" + s, player, p -> total(s, p)));
+			}
+		}
+
+		return args.toArray(new Argument[args.size()]);
+	}
+
+	public void save(Path file) throws IOException {
+		String fn = file.getFileName().toString();
+
+		if (fn.endsWith(".json")) {
+			try (JsonGenerator json = factory.createGenerator(Files.newOutputStream(file))) {
+				json.useDefaultPrettyPrinter();
+				saveJSON(json);
+			}
+		} else if (fn.endsWith(".csv")) {
+			try (BufferedWriter out = Files.newBufferedWriter(file)) {
+				saveCSV(out);
+			}
+		} else {
+			try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(file))) {
+				save(out);
+			}
+		}
+	}
+
+	public void saveJSON(JsonGenerator json) throws IOException {
+		json.writeStartObject();
+
+		json.writeFieldName("format_version");
+		json.writeNumber(FORMAT_VERSION);
+
+		boolean useIntervals = this.collection.containsIntervals();
+
+		json.writeFieldName("players");
+		json.writeStartArray();
+		int total = getPlayerCount();
+		for (int i = 0; i < total; i++) {
+			PlayerInfo p = getPlayer(i);
+			json.writeStartObject();
+
+			json.writeFieldName("id");
+			if (p.id == null)
+				json.writeNull();
+			else
+				json.writeString(p.id.toString());
+
+			json.writeFieldName("name");
+			json.writeString(p.name);
+
+			if (useIntervals) {
+				json.writeFieldName("dates");
+				json.writeStartArray();
+				json.writeString(StringUtil.DATETIME_FORMAT.format(p.startDate));
+				json.writeString(StringUtil.DATETIME_FORMAT.format(p.endDate));
+				json.writeEndArray();
+			} else {
+				json.writeFieldName("date");
+				json.writeString(StringUtil.DATETIME_FORMAT.format(p.endDate));
+			}
+
+			json.writeEndObject();
+		}
+		json.writeEndArray();
+
+		json.writeFieldName("rankings");
+		json.writeStartArray();
+		for (Ranking r : this.rankings.values()) {
+			json.writeStartObject();
+			json.writeFieldName("name");
+			json.writeString(r.name);
+
+			boolean d = r.descendingMode;
+			json.writeFieldName("descending");
+			json.writeBoolean(d);
+
+			json.writeFieldName("content");
+			json.writeStartArray();
+			r.descendingMode = false;
+			Iterator<Integer> it = r.iterator();
+			while (it.hasNext()) {
+				int p = it.next();
+				json.writeNumber(p);
+				json.writeNumber(r.getValue(p));
+			}
+			r.descendingMode = d;
+
+			json.writeEndArray();
+			json.writeEndObject();
+		}
+		json.writeEndArray();
+
+		json.writeEndObject();
+	}
+	
+	public void saveCSV(BufferedWriter out) throws IOException {
+		out.write("Dates");
+		out.newLine();
+
+		if (this.collection.containsIntervals()) {
+			out.write("Début");
+			StringUtil.DATETIME_FORMAT.formatTo(this.collection.getMinStartDate(), out);
+			out.write(',');
+			StringUtil.DATETIME_FORMAT.formatTo(this.collection.getMaxStartDate(), out);
+			out.newLine();
+		}
+
+		out.write("Fin");
+		out.write(',');
+		StringUtil.DATETIME_FORMAT.formatTo(this.collection.getMinEndDate(), out);
+		out.write(',');
+		StringUtil.DATETIME_FORMAT.formatTo(this.collection.getMaxEndDate(), out);
+		out.newLine();
+
+		Ranking[] rankings = new Ranking[this.rankings.size()];
+		Iterator<Integer>[] iterators = new Iterator[rankings.length];
+
+		out.write("Classement");
+
+		int i = 0;
+		for (Ranking r : this.rankings.values()) {
+			out.write(',');
+			out.write("Joueur");
+			out.write(',');
+			out.write(r.name);
+
+			rankings[i] = r;
+			iterators[i++] = r.iterator();
+		}
+
+		int total = getPlayerCount();
+		for (int rank = 0; rank < total; rank++) {
+			out.newLine();
+			out.write(Integer.toString(rank +1));
+
+			for (i = 0; i < rankings.length; i++) {
+				Iterator<Integer> it = iterators[i];
+				if (it.hasNext()) {
+					int p = it.next();
+					out.write(',');
+					out.write(getPlayer(p).name);
+					out.write(',');
+					out.write(Double.toString(rankings[i].getValue(p)));
+				} else {
+					out.write(",,");
+				}
+			}
+		}
+	}
+
+	public void save(DataOutputStream out) throws IOException {
+		out.writeInt(FORMAT_VERSION);
+
+		boolean useIntervals = this.collection.containsIntervals();
+		out.writeBoolean(useIntervals);
+
+		int total = getPlayerCount();
+		out.writeInt(total);
+		for (int i = 0; i < total; i++) {
+			PlayerInfo p = getPlayer(i);
+			if (p.id == null) {
+				out.writeLong(0);
+				out.writeLong(0);
+			} else {
+				out.writeLong(p.id.getMostSignificantBits());
+				out.writeLong(p.id.getLeastSignificantBits());
+			}
+			out.writeUTF(p.name);
+			if (useIntervals)
+				out.writeLong(p.startDate.toEpochMilli());
+			out.writeLong(p.endDate.toEpochMilli());
+		}
+
+		out.writeInt(this.rankings.size());
+		for (Ranking r : this.rankings.values()) {
+			out.writeUTF(r.name);
+			boolean d = r.descendingMode;
+			out.writeBoolean(d);
+
+			r.descendingMode = false;
+			out.writeInt(r.size());
+			Iterator<Integer> it = r.iterator();
+			while (it.hasNext()) {
+				int p = it.next();
+				out.writeInt(p);
+				out.writeDouble(r.getValue(p));
+			}
+			r.descendingMode = d;
+		}
+	}
+
+	public int getPlayerCount() {
+		return this.collection.getPlayerCount();
+	}
+
+	public PlayerInfo getPlayer(int p) {
+		return this.collection.getPlayer(p);
+	}
 
 	public static RankingList read(Path file) throws IOException {
 		String fn = file.getFileName().toString();
@@ -69,60 +349,13 @@ public class RankingList {
 		}
 	}
 
-	public static RankingList read(DataInputStream in) throws IOException {
-		int version = in.readInt();
-		boolean old1 = version == 1, old2 = version == 2; // Compatibility with older versions
-		if (version != FORMAT_VERSION && !old1 && !old2)
-			throw new IOException("Invalid format version: " + version);
-
-		PlayerInfo[] players;
-		if (old1) {
-			Instant date = Instant.ofEpochMilli(in.readLong());
-
-			players = new PlayerInfo[in.readInt()];
-			for (int i = 0; i < players.length; i++) {
-				PlayerInfo p = new PlayerInfo();
-				p.name = in.readUTF();
-				p.date = date;
-				players[i] = p;
-			}
-		} else {
-			players = new PlayerInfo[in.readInt()];
-			for (int i = 0; i < players.length; i++) {
-				PlayerInfo p = new PlayerInfo();
-				long most = in.readLong(), least = in.readLong();
-				if (most != 0 || least != 0)
-					p.id = new UUID(most, least);
-				p.name = in.readUTF();
-				p.date = Instant.ofEpochMilli(in.readLong());
-				players[i] = p;
-			}
-		}
-
-		RankingList l = new RankingList(players);
-		int rankings = in.readInt();
-		for (int i = 0; i < rankings; i++) {
-			Ranking r = new Ranking(l, in.readUTF());
-			boolean d = in.readBoolean();
-
-			int size = old2 ? players.length : in.readInt();
-			for (int p = 0; p < size; p++)
-				r.put(in.readInt(), in.readDouble());
-
-			r.descendingMode = d;
-			l.rankings.put(r.name, r);
-		}
-
-		return l;
-	}
-
 	public static RankingList readJSON(JsonParser json) throws IOException {
 		if (json.nextToken() != JsonToken.START_OBJECT)
 			throw new JsonParseException(json, "Expected to start a new object");
 
 		RankingList l = new RankingList();
 
-		boolean old1 = false; // Compatibility with older versions
+		boolean old1 = false;
 		Instant date = null;
 
 		boolean versionCheck = true;
@@ -135,7 +368,7 @@ public class RankingList {
 
 				int version = json.getIntValue();
 				old1 = version == 1;
-				if (version != FORMAT_VERSION && !old1 && version != 2) // old2
+				if (version != FORMAT_VERSION && !old1 && version != 2 && version != 3) // Compatibility with older versions
 					throw new IOException("Invalid format version: " + version);
 
 				versionCheck = false;
@@ -161,9 +394,12 @@ public class RankingList {
 						throw new IllegalStateException("Date was not provided");
 
 					while (json.nextToken() != JsonToken.END_ARRAY) {
+						if (json.currentToken() != JsonToken.VALUE_STRING)
+							throw new JsonParseException(json, "Field 'players' was expected to contains strings");
+
 						PlayerInfo p = new PlayerInfo();
 						p.name = json.getValueAsString();
-						p.date = date;
+						p.endDate = date;
 						newPlayers.add(p);
 					}
 				} else {
@@ -192,11 +428,28 @@ public class RankingList {
 								continue;
 							}
 
+							if (field2.equals("dates")) {
+								if (json.nextToken() != JsonToken.START_ARRAY)
+									throw new JsonParseException(json, "Field 'dates' of a player was expected to be an array");
+
+								List<Instant> dates = new ArrayList<>();
+								while (json.nextToken() != JsonToken.END_ARRAY) {
+									if (json.currentToken() != JsonToken.VALUE_STRING)
+										throw new JsonParseException(json, "Field 'dates' of a player was expected to contains strings");
+
+									dates.add(Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString())));
+								}
+
+								p.startDate = dates.get(0);
+								p.endDate = dates.get(1);
+								continue;
+							}
+
 							if (field2.equals("date")) {
 								if (json.nextToken() != JsonToken.VALUE_STRING)
 									throw new JsonParseException(json, "Field 'date' of a player was expected to be a string");
 
-								p.date = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
+								p.endDate = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
 								continue;
 							}
 
@@ -208,7 +461,7 @@ public class RankingList {
 					}
 				}
 
-				l.players = newPlayers.toArray(new PlayerInfo[newPlayers.size()]);
+				l.collection = new DataCollection(newPlayers.toArray(new PlayerInfo[newPlayers.size()]));
 				continue;
 			}
 
@@ -287,273 +540,59 @@ public class RankingList {
 			json.skipChildren();
 		}
 
-		if (l.players == null)
+		if (l.collection == null)
 			throw new IllegalStateException("Players was not provided");
 		return l;
 	}
-	
-	public Ranking getOrCreate(String name) {
-		Ranking r = this.rankings.get(name);
-		if (r == null) {
-			r = new Ranking(this, name);
-			this.rankings.put(name, r);
 
-			int i = name.indexOf('_');
-			if (i != -1)
-				this.extensions.add(name.substring(i + 1));
-		}
-		return r;
-	}
+	public static RankingList read(DataInputStream in) throws IOException {
+		int version = in.readInt();
+		boolean old1 = version == 1, old2 = version == 2, old3 = version == 3; // Compatibility with older versions
+		if (version != FORMAT_VERSION && !old1 && !old2 && !old3)
+			throw new IOException("Invalid format version: " + version);
 
-	public void copy(String name, String newName) {
-		Ranking r = this.rankings.get(name);
-		if (r != null)
-			this.rankings.put(newName, r.copy(newName));
-	}
+		PlayerInfo[] players;
+		if (old1) {
+			Instant date = Instant.ofEpochMilli(in.readLong());
 
-	public void rename(String name, String newName) {
-		Ranking r = this.rankings.remove(name);
-		if (r != null)
-			this.rankings.put(newName, r.rename(newName));
-	}
-
-	public double total(String extension, int player) {
-		return total((s) -> {
-			int i = s.indexOf('_');
-			return i != -1 && s.substring(i + 1).equals(extension);
-		}, player);
-	}
-	
-	public double total(Predicate<String> category, int player) {
-		double total = 0;
-		for (Ranking r : this.rankings.values()) {
-			if (category.test(r.name))
-				total += r.getValue(player);
-		}
-		return total;
-	}
-	
-	public int getPlayerCount() {
-		return this.players.length;
-	}
-	
-	public PlayerInfo getPlayer(int p) {
-		return this.players[p];
-	}
-	
-	public Collection<Ranking> getRankings() {
-		return this.rankings.values();
-	}
-	
-	public Instant[] getDateExtremums() {
-		if (this.dateExtremums == null) {
-			Instant min = null, max = null;
-			for (PlayerInfo p : this.players) {
-				if (min == null || p.date.isBefore(min))
-					min = p.date;
-				if (max == null || p.date.isAfter(max))
-					max = p.date;
-			}
-			this.dateExtremums = new Instant[] {min, max};
-		}
-		return this.dateExtremums;
-	}
-
-	public Argument[] getAllArguments(AtomicInteger player) {
-		Argument[] args = new Argument[this.rankings.size() * 2 + this.extensions.size()];
-		int i = 0;
-		for (Ranking r : this.rankings.values()) {
-			args[i++] = new PlayerDependantArgument(r.name, player, r::getValue);
-			args[i++] = new PlayerDependantArgument("rank_" + r.name, player, p -> {
-				int rank = r.getRank(p);
-				return rank == -1 ? Double.NaN : rank + 1;
-			});
-		}
-		for (String s : this.extensions)
-			args[i++] = new PlayerDependantArgument("total_" + s, player, p -> total(s, p));
-		return args;
-	}
-
-	public Argument[] getArguments(String expression, AtomicInteger player) {
-		List<Argument> args = new ArrayList<>();
-		boolean rank_ = expression.contains("rank_"), total_ = expression.contains("total_");
-
-		for (Ranking r : this.rankings.values()) {
-			if (!expression.contains(r.name))
-				continue;
-			args.add(new PlayerDependantArgument(r.name, player, r::getValue));
-
-			if (rank_ && expression.contains("rank_" + r.name)) {
-				args.add(new PlayerDependantArgument("rank_" + r.name, player, p -> {
-					int rank = r.getRank(p);
-					return rank == -1 ? Double.NaN : rank + 1;
-				}));
-			}
-		}
-
-		if (total_) {
-			for (String s : this.extensions) {
-				if (expression.contains("total_" + s))
-					args.add(new PlayerDependantArgument("total_" + s, player, p -> total(s, p)));
-			}
-		}
-
-		return args.toArray(new Argument[args.size()]);
-	}
-	
-	public void save(Path file) throws IOException {
-		String fn = file.getFileName().toString();
-
-		if (fn.endsWith(".json")) {
-			try (JsonGenerator json = factory.createGenerator(Files.newOutputStream(file))) {
-				json.useDefaultPrettyPrinter();
-				saveJSON(json);
-			}
-		} else if (fn.endsWith(".csv")) {
-			try (BufferedWriter out = Files.newBufferedWriter(file)) {
-				saveCSV(out);
+			players = new PlayerInfo[in.readInt()];
+			for (int i = 0; i < players.length; i++) {
+				PlayerInfo p = new PlayerInfo();
+				p.name = in.readUTF();
+				p.endDate = date;
+				players[i] = p;
 			}
 		} else {
-			try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(file))) {
-				save(out);
+			boolean useIntervals = !(old2 || old3) && in.readBoolean();
+
+			players = new PlayerInfo[in.readInt()];
+			for (int i = 0; i < players.length; i++) {
+				PlayerInfo p = new PlayerInfo();
+				long most = in.readLong(), least = in.readLong();
+				if (most != 0 || least != 0)
+					p.id = new UUID(most, least);
+				p.name = in.readUTF();
+				if (useIntervals)
+					p.startDate = Instant.ofEpochMilli(in.readLong());
+				p.endDate = Instant.ofEpochMilli(in.readLong());
+				players[i] = p;
 			}
 		}
-	}
-	
-	public void save(DataOutputStream out) throws IOException {
-		out.writeInt(FORMAT_VERSION);
 
-		int total = this.players.length;
-		out.writeInt(total);
-		for (PlayerInfo p : this.players) {
-			if (p.id == null) {
-				out.writeLong(0);
-				out.writeLong(0);
-			} else {
-				out.writeLong(p.id.getMostSignificantBits());
-				out.writeLong(p.id.getLeastSignificantBits());
-			}
-			out.writeUTF(p.name);
-			out.writeLong(p.date.toEpochMilli());
-		}
+		RankingList l = new RankingList(new DataCollection(players));
+		int rankings = in.readInt();
+		for (int i = 0; i < rankings; i++) {
+			Ranking r = new Ranking(l, in.readUTF());
+			boolean d = in.readBoolean();
 
-		out.writeInt(this.rankings.size());
-		for (Ranking r : this.rankings.values()) {
-			out.writeUTF(r.name);
-			boolean d = r.descendingMode;
-			out.writeBoolean(d);
+			int size = old2 ? players.length : in.readInt();
+			for (int p = 0; p < size; p++)
+				r.put(in.readInt(), in.readDouble());
 
-			r.descendingMode = false;
-			out.writeInt(r.size());
-			Iterator<Integer> it = r.iterator();
-			while (it.hasNext()) {
-				int p = it.next();
-				out.writeInt(p);
-				out.writeDouble(r.getValue(p));
-			}
 			r.descendingMode = d;
-		}
-	}
-	
-	public void saveJSON(JsonGenerator json) throws IOException {
-		json.writeStartObject();
-
-		json.writeFieldName("format_version");
-		json.writeNumber(FORMAT_VERSION);
-
-		json.writeFieldName("players");
-		json.writeStartArray();
-		for (PlayerInfo p : this.players) {
-			json.writeStartObject();
-
-			json.writeFieldName("id");
-			if (p.id == null)
-				json.writeNull();
-			else
-				json.writeString(p.id.toString());
-
-			json.writeFieldName("name");
-			json.writeString(p.name);
-
-			json.writeFieldName("date");
-			json.writeString(StringUtil.DATETIME_FORMAT.format(p.date));
-
-			json.writeEndObject();
-		}
-		json.writeEndArray();
-
-		json.writeFieldName("rankings");
-		json.writeStartArray();
-		for (Ranking r : this.rankings.values()) {
-			json.writeStartObject();
-			json.writeFieldName("name");
-			json.writeString(r.name);
-
-			boolean d = r.descendingMode;
-			json.writeFieldName("descending");
-			json.writeBoolean(d);
-
-			json.writeFieldName("content");
-			json.writeStartArray();
-			r.descendingMode = false;
-			Iterator<Integer> it = r.iterator();
-			while (it.hasNext()) {
-				int p = it.next();
-				json.writeNumber(p);
-				json.writeNumber(r.getValue(p));
-			}
-			r.descendingMode = d;
-
-			json.writeEndArray();
-			json.writeEndObject();
-		}
-		json.writeEndArray();
-
-		json.writeEndObject();
-	}
-	
-	public void saveCSV(BufferedWriter out) throws IOException {
-		out.write("Dates");
-		out.write(',');
-		Instant[] extremums = getDateExtremums();
-		StringUtil.DATETIME_FORMAT.formatTo(extremums[0], out);
-		out.write(',');
-		StringUtil.DATETIME_FORMAT.formatTo(extremums[1], out);
-		out.newLine();
-
-		Ranking[] rankings = new Ranking[this.rankings.size()];
-		Iterator<Integer>[] iterators = new Iterator[rankings.length];
-
-		out.write("Classement");
-
-		int i = 0;
-		for (Ranking r : this.rankings.values()) {
-			out.write(',');
-			out.write("Joueur");
-			out.write(',');
-			out.write(r.name);
-
-			rankings[i] = r;
-			iterators[i++] = r.iterator();
+			l.rankings.put(r.name, r);
 		}
 
-		for (int rank = 0; rank < this.players.length; rank++) {
-			out.newLine();
-			out.write(Integer.toString(rank +1));
-
-
-			for (i = 0; i < rankings.length; i++) {
-				Iterator<Integer> it = iterators[i];
-				if (it.hasNext()) {
-					int p = it.next();
-					out.write(',');
-					out.write(this.players[p].name);
-					out.write(',');
-					out.write(Double.toString(rankings[i].getValue(p)));
-				} else {
-					out.write(",,");
-				}
-			}
-		}
+		return l;
 	}
 }
