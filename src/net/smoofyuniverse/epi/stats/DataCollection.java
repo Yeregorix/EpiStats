@@ -32,9 +32,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class DataCollection {
-	public static final int FORMAT_VERSION = 1;
+	public static final int FORMAT_VERSION = 2;
 
 	private Map<UUID, PlayerInfo> idsToPlayers = new HashMap<>();
 	private PlayerInfo[] players;
@@ -121,6 +123,9 @@ public class DataCollection {
 	public void save(DataOutputStream out) throws IOException {
 		out.writeInt(FORMAT_VERSION);
 
+		GZIPOutputStream zip = new GZIPOutputStream(out);
+		out = new DataOutputStream(zip);
+
 		out.writeInt(this.players.length);
 		for (PlayerInfo p : this.players) {
 			if (p.startDate != null || p.startStats != null)
@@ -143,6 +148,8 @@ public class DataCollection {
 				}
 			}
 		}
+
+		zip.finish();
 	}
 
 	public static DataCollection read(Path file) throws IOException {
@@ -157,8 +164,12 @@ public class DataCollection {
 
 	public static DataCollection read(DataInputStream in) throws IOException {
 		int version = in.readInt();
-		if (version != FORMAT_VERSION)
+		boolean old1 = version == 1;
+		if (version != FORMAT_VERSION && !old1)
 			throw new IOException("Invalid format version: " + version);
+
+		if (!old1)
+			in = new DataInputStream(new GZIPInputStream(in));
 
 		PlayerInfo[] players = new PlayerInfo[in.readInt()];
 		for (int i = 0; i < players.length; i++) {
