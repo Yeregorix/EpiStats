@@ -51,7 +51,8 @@ import java.util.function.Consumer;
 public class DataCollectionPanel extends GridPane {
 	private static final Logger logger = Application.getLogger("DataCollectionPanel");
 
-	private Label datesL = new Label("Dates:"), startL = new Label("Début:"), startDates = new Label("Depuis toujours"), endL = new Label("Fin:"), endDates = new Label("Indéfinie"), cacheL = new Label("Cache:");
+	private Label datesL = new Label("Dates:"), startL = new Label("Début:"), startDates = new Label("Depuis toujours"), startPlayers = new Label();
+	private Label endL = new Label("Fin:"), endDates = new Label("Indéfinie"), endPlayers = new Label(), cacheL = new Label("Cache:");
 	private Button loadStart = new Button("Charger"), clearStart = new Button("Effacer");
 	private Button loadEnd = new Button("Charger"), genEnd = new Button("Générer"), saveEnd = new Button("Sauvegarder");
 	private TextField cacheAge = new TextField();
@@ -91,8 +92,7 @@ public class DataCollectionPanel extends GridPane {
 			this.epi.getExecutor().submit(() -> {
 				try {
 					logger.debug("Reading data collection from file ..");
-					this.startCol = DataCollection.read(file);
-					Platform.runLater(() -> this.startDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(this.startCol.getMinEndDate()) + " au " + StringUtil.DATETIME_FORMAT.format(this.startCol.getMaxEndDate())));
+					setStartCollection(DataCollection.read(file));
 				} catch (Exception e) {
 					Popup.error().title("Erreur de lecture").header("Une erreur est survenue lors de la lecture de la collection de données").message(e).show();
 					logger.error("Failed to read data collection from file " + file.getFileName(), e);
@@ -100,10 +100,7 @@ public class DataCollectionPanel extends GridPane {
 			});
 		});
 
-		this.clearStart.setOnAction(a -> {
-			this.startCol = null;
-			this.startDates.setText("Depuis toujours");
-		});
+		this.clearStart.setOnAction(a -> setStartCollection(null));
 
 		this.loadEnd.setOnAction(a -> {
 			File f = this.chooser.showOpenDialog(this.epi.getStage());
@@ -114,8 +111,7 @@ public class DataCollectionPanel extends GridPane {
 			this.epi.getExecutor().submit(() -> {
 				try {
 					logger.debug("Reading data collection from file ..");
-					this.endCol = DataCollection.read(file);
-					Platform.runLater(() -> this.endDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(this.endCol.getMinEndDate()) + " au " + StringUtil.DATETIME_FORMAT.format(this.endCol.getMaxEndDate())));
+					setEndCollection(DataCollection.read(file));
 				} catch (Exception e) {
 					Popup.error().title("Erreur de lecture").header("Une erreur est survenue lors de la lecture de la collection de données").message(e).show();
 					logger.error("Failed to read data collection from file " + file.getFileName(), e);
@@ -158,12 +154,16 @@ public class DataCollectionPanel extends GridPane {
 		add(this.datesL, 0, 1);
 
 		add(this.startL, 1, 1);
-		add(this.startDates, 2, 1, 3, 1);
+		add(this.startDates, 2, 1, 2, 1);
+		add(this.startPlayers, 4, 1);
+
 		add(this.loadStart, 2, 2);
 		add(this.clearStart, 3, 2);
 
 		add(this.endL, 1, 3);
-		add(this.endDates, 2, 3, 3, 1);
+		add(this.endDates, 2, 3, 2, 1);
+		add(this.endPlayers, 4, 3);
+
 		add(this.loadEnd, 2, 4);
 		add(this.genEnd, 3, 4);
 		add(this.saveEnd, 4, 4);
@@ -224,6 +224,42 @@ public class DataCollectionPanel extends GridPane {
 
 			Popup.consumer(consumer).title("Génération de la collection de données ..").submitAndWait();
 		}
+	}
+
+	private void setStartCollection(DataCollection col) {
+		if (Platform.isFxApplicationThread()) {
+			if (col == null) {
+				this.startCol = null;
+				this.startDates.setText("Depuis toujours");
+				this.startPlayers.setText(null);
+			} else {
+				if (col.containsIntervals())
+					throw new IllegalArgumentException("Intervals");
+
+				this.startCol = col;
+				this.startDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.getMinEndDate()) + " au " + StringUtil.DATETIME_FORMAT.format(col.getMaxEndDate()));
+				this.startPlayers.setText("(" + col.getPlayerCount() + " " + (col.getPlayerCount() > 1 ? "joueurs" : "joueur") + ")");
+			}
+		} else
+			Platform.runLater(() -> setStartCollection(col));
+	}
+
+	private void setEndCollection(DataCollection col) {
+		if (Platform.isFxApplicationThread()) {
+			if (col == null) {
+				this.endCol = null;
+				this.endDates.setText("Indéfinie");
+				this.endPlayers.setText(null);
+			} else {
+				if (col.containsIntervals())
+					throw new IllegalArgumentException("Intervals");
+
+				this.endCol = col;
+				this.endDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.getMinEndDate()) + " au " + StringUtil.DATETIME_FORMAT.format(col.getMaxEndDate()));
+				this.endPlayers.setText("(" + col.getPlayerCount() + " " + (col.getPlayerCount() > 1 ? "joueurs" : "joueur") + ")");
+			}
+		} else
+			Platform.runLater(() -> setEndCollection(col));
 	}
 
 	public Optional<DataCollection> getTargetCollection() {
