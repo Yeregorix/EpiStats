@@ -215,11 +215,11 @@ public class DataCollectionPanel extends GridPane {
 
 				logger.info("Collected data of " + players.size() + " players in " + (System.currentTimeMillis() - time) / 1000F + "s.");
 
-				this.endCol = new DataCollection(players.toArray(new PlayerInfo[players.size()]));
-				Platform.runLater(() -> this.endDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(this.endCol.getMinEndDate()) + " au " + StringUtil.DATETIME_FORMAT.format(this.endCol.getMaxEndDate())));
+				DataCollection col = new DataCollection(players.toArray(new PlayerInfo[players.size()]));
+				setEndCollection(col);
 
 				if (notifyTaskEnd)
-					Popup.info().title("Génération terminée").message("Une collection contenant " + this.endCol.getPlayerCount() + " " + (this.endCol.getPlayerCount() > 1 ? "joueurs" : "joueur") + " a été générée.").show();
+					Popup.info().title("Génération terminée").message("Une collection contenant " + col.getPlayerCount() + " " + (col.getPlayerCount() > 1 ? "joueurs" : "joueur") + " a été générée.").show();
 			};
 
 			Popup.consumer(consumer).title("Génération de la collection de données ..").submitAndWait();
