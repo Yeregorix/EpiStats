@@ -35,49 +35,53 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public final class GuildInfo {
 	public static final URL URL_BASE;
 	private static final Logger logger = Application.getLogger("GuildInfo");
 	private static final JsonFactory factory = new JsonFactory();
-	public UUID[] members;
-	public String name;
+
+	public final List<UUID> members;
+	public final String name;
+
+	public GuildInfo(List<UUID> members, String name) {
+		this.members = members;
+		this.name = name;
+	}
 
 	public static Optional<GuildInfo> get(String guildName) {
 		try {
-			GuildInfo g = new GuildInfo();
-			g.read(guildName);
-			return Optional.of(g);
+			return Optional.of(read(guildName));
 		} catch (IOException e) {
 			logger.error("Failed to get json content for guild '" + guildName + "'", e);
 			return Optional.empty();
 		}
 	}
 
-	public void read(String guildName) throws IOException {
-		read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), Application.get().getConnectionConfig());
+	public static GuildInfo read(String guildName) throws IOException {
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), Application.get().getConnectionConfig());
 	}
-	
-	private void read(URL url, ConnectionConfiguration config) throws IOException {
+
+	public static GuildInfo read(URL url, ConnectionConfiguration config) throws IOException {
 		HttpURLConnection co = config.openHttpConnection(url);
 		co.connect();
 
 		int code = co.getResponseCode();
 		if (code / 100 == 2) {
 			try (JsonParser json = factory.createParser(co.getInputStream())) {
-				read(json);
+				return read(json);
 			}
 		} else
 			throw new IOException("Invalid response code: " + code);
 	}
-	
-	public void read(JsonParser json) throws IOException {
+
+	public static GuildInfo read(JsonParser json) throws IOException {
 		if (json.nextToken() != JsonToken.START_OBJECT)
 			throw new JsonParseException(json, "Expected to start a new object");
+
+		List<UUID> members = null;
+		String name = null;
 
 		while (json.nextToken() != JsonToken.END_OBJECT) {
 			String field = json.getCurrentName();
@@ -86,7 +90,7 @@ public final class GuildInfo {
 				if (json.nextToken() != JsonToken.VALUE_STRING)
 					throw new JsonParseException(json, "Field 'name' was expected to be a string");
 
-				this.name = json.getValueAsString();
+				name = json.getValueAsString();
 				continue;
 			}
 
@@ -116,13 +120,20 @@ public final class GuildInfo {
 					}
 				}
 
-				this.members = newMembers.toArray(new UUID[newMembers.size()]);
+				members = Collections.unmodifiableList(newMembers);
 				continue;
 			}
 
 			json.nextToken();
 			json.skipChildren();
 		}
+
+		if (members == null)
+			throw new IllegalArgumentException("Field 'members' is missing");
+		if (name == null)
+			throw new IllegalArgumentException("Field 'name' is missing");
+
+		return new GuildInfo(members, name);
 	}
 
 	static {

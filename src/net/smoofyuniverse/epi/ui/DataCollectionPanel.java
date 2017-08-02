@@ -282,40 +282,38 @@ public class DataCollectionPanel extends GridPane {
 		}
 
 		List<PlayerInfo> players = new ArrayList<>();
-		int missing1 = 0, missing2 = 0;
+		int endMissing = 0, startMissing = 0;
 
 		for (UUID id : ids) {
-			PlayerInfo info = this.endCol.getPlayer(id).orElse(null);
-			if (info == null) {
-				missing1++;
+			PlayerInfo endInfo = this.endCol.getPlayer(id).orElse(null);
+			if (endInfo == null) {
+				endMissing++;
 				continue;
 			}
 
 			if (useIntervals) {
-				PlayerInfo info2 = this.startCol.getPlayer(id).orElse(null);
-				if (info2 == null) {
-					missing2++;
+				PlayerInfo startInfo = this.startCol.getPlayer(id).orElse(null);
+				if (startInfo == null) {
+					startMissing++;
 					continue;
 				}
 
-				info = info.copy();
-				info.startDate = info2.endDate;
-				info.startStats = info2.endStats;
+				endInfo = PlayerInfo.merge(startInfo, endInfo);
 			}
 
-			players.add(info);
+			players.add(endInfo);
 		}
 
-		int missing = missing1 + missing2;
+		int missing = endMissing + startMissing;
 		if (missing != 0) {
 			String msg;
 			if (missing == 1) {
 				msg = missing + " joueur présent dans la liste d'objets à traiter n'a pas été trouvé dans les données à traiter."
-						+ "\nSi vous souhaiter le traiter, vous devez " + (missing2 == 0 ? "générer ou fournir" : "fournir") + " des données contenant ce joueur."
+						+ "\nSi vous souhaiter le traiter, vous devez " + (startMissing == 0 ? "générer ou fournir" : "fournir") + " des données contenant ce joueur."
 						+ "\nSouhaitez-vous continuer sans ce joueur ?";
 			} else {
 				msg = missing + " joueurs présents dans la liste d'objets à traiter n'ont pas été trouvés dans les données à traiter."
-						+ "\nSi vous souhaiter les traiter, vous devez " + (missing2 == 0 ? "générer ou fournir" : "fournir") + " des données contenant ces joueurs."
+						+ "\nSi vous souhaiter les traiter, vous devez " + (startMissing == 0 ? "générer ou fournir" : "fournir") + " des données contenant ces joueurs."
 						+ "\nSouhaitez-vous continuer sans ces joueurs ?";
 			}
 			if (!Popup.confirmation().title("Joueurs manquants").message(msg).submitAndWait())

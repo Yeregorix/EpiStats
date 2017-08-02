@@ -173,26 +173,24 @@ public class DataCollection {
 
 		PlayerInfo[] players = new PlayerInfo[in.readInt()];
 		for (int i = 0; i < players.length; i++) {
-			PlayerInfo p = new PlayerInfo();
+			UUID id = new UUID(in.readLong(), in.readLong());
+			String name = in.readUTF();
+			String guild = in.readUTF();
+			if (guild.isEmpty())
+				guild = null;
+			Instant date = Instant.ofEpochMilli(in.readLong());
 
-			p.id = new UUID(in.readLong(), in.readLong());
-			p.name = in.readUTF();
-			p.guild = in.readUTF();
-			if (p.guild.isEmpty())
-				p.guild = null;
-			p.endDate = Instant.ofEpochMilli(in.readLong());
-
-			p.endStats = new HashMap<>();
+			Map<String, Map<String, Double>> stats = new HashMap<>();
 			int maps = in.readInt();
 			for (int j = 0; j < maps; j++) {
 				Map<String, Double> map = new HashMap<>();
-				p.endStats.put(in.readUTF(), map);
-				int stats = in.readInt();
-				for (int y = 0; y < stats; y++)
+				stats.put(in.readUTF(), map);
+				int count = in.readInt();
+				for (int y = 0; y < count; y++)
 					map.put(in.readUTF(), in.readDouble());
 			}
 
-			players[i] = p;
+			players[i] = new PlayerInfo(Collections.unmodifiableMap(stats), name, guild, id, date);
 		}
 
 		return new DataCollection(players);

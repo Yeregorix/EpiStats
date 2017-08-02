@@ -387,7 +387,7 @@ public class RankingList {
 				if (json.nextToken() != JsonToken.START_ARRAY)
 					throw new JsonParseException(json, "Field 'players' was expected to be an array");
 
-				List<PlayerInfo> newPlayers = new ArrayList<>();
+				List<PlayerInfo> players = new ArrayList<>();
 
 				if (old1) {
 					if (date == null)
@@ -397,17 +397,16 @@ public class RankingList {
 						if (json.currentToken() != JsonToken.VALUE_STRING)
 							throw new JsonParseException(json, "Field 'players' was expected to contains strings");
 
-						PlayerInfo p = new PlayerInfo();
-						p.name = json.getValueAsString();
-						p.endDate = date;
-						newPlayers.add(p);
+						players.add(new PlayerInfo(json.getValueAsString(), null, null, date));
 					}
 				} else {
 					while (json.nextToken() != JsonToken.END_ARRAY) {
 						if (json.currentToken() != JsonToken.START_OBJECT)
 							throw new JsonParseException(json, "Expected to start a new player object");
 
-						PlayerInfo p = new PlayerInfo();
+						UUID id = null;
+						String name = null;
+						Instant startDate = null, endDate = null;
 
 						while (json.nextToken() != JsonToken.END_OBJECT) {
 							String field2 = json.getCurrentName();
@@ -416,7 +415,7 @@ public class RankingList {
 								if (json.nextToken() != JsonToken.VALUE_STRING)
 									throw new JsonParseException(json, "Field 'id' of a player was expected to be a string");
 
-								p.id = UUID.fromString(json.getValueAsString());
+								id = UUID.fromString(json.getValueAsString());
 								continue;
 							}
 
@@ -424,7 +423,7 @@ public class RankingList {
 								if (json.nextToken() != JsonToken.VALUE_STRING)
 									throw new JsonParseException(json, "Field 'name' of a player was expected to be a string");
 
-								p.name = json.getValueAsString();
+								name = json.getValueAsString();
 								continue;
 							}
 
@@ -440,8 +439,8 @@ public class RankingList {
 									dates.add(Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString())));
 								}
 
-								p.startDate = dates.get(0);
-								p.endDate = dates.get(1);
+								startDate = dates.get(0);
+								endDate = dates.get(1);
 								continue;
 							}
 
@@ -449,7 +448,7 @@ public class RankingList {
 								if (json.nextToken() != JsonToken.VALUE_STRING)
 									throw new JsonParseException(json, "Field 'date' of a player was expected to be a string");
 
-								p.endDate = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
+								endDate = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
 								continue;
 							}
 
@@ -457,11 +456,18 @@ public class RankingList {
 							json.skipChildren();
 						}
 
-						newPlayers.add(p);
+						if (name == null)
+							throw new IllegalArgumentException("Field 'name' is missing");
+						if (id == null)
+							throw new IllegalArgumentException("Field 'id' is missing");
+						if (endDate == null)
+							throw new IllegalArgumentException("Field 'dates' is missing");
+
+						players.add(new PlayerInfo(name, id, startDate, endDate));
 					}
 				}
 
-				l.collection = new DataCollection(newPlayers.toArray(new PlayerInfo[newPlayers.size()]));
+				l.collection = new DataCollection(players.toArray(new PlayerInfo[players.size()]));
 				continue;
 			}
 
@@ -557,25 +563,19 @@ public class RankingList {
 
 			players = new PlayerInfo[in.readInt()];
 			for (int i = 0; i < players.length; i++) {
-				PlayerInfo p = new PlayerInfo();
-				p.name = in.readUTF();
-				p.endDate = date;
-				players[i] = p;
+				players[i] = new PlayerInfo(in.readUTF(), null, null, date);
 			}
 		} else {
 			boolean useIntervals = !(old2 || old3) && in.readBoolean();
 
 			players = new PlayerInfo[in.readInt()];
 			for (int i = 0; i < players.length; i++) {
-				PlayerInfo p = new PlayerInfo();
 				long most = in.readLong(), least = in.readLong();
-				if (most != 0 || least != 0)
-					p.id = new UUID(most, least);
-				p.name = in.readUTF();
-				if (useIntervals)
-					p.startDate = Instant.ofEpochMilli(in.readLong());
-				p.endDate = Instant.ofEpochMilli(in.readLong());
-				players[i] = p;
+				UUID id = (most != 0 || least != 0) ? new UUID(most, least) : null;
+				String name = in.readUTF();
+				Instant startDate = useIntervals ? Instant.ofEpochMilli(in.readLong()) : null;
+				Instant endDate = Instant.ofEpochMilli(in.readLong());
+				players[i] = new PlayerInfo(name, id, startDate, endDate);
 			}
 		}
 

@@ -98,27 +98,25 @@ public class PlayerCache {
 		int version = in.readInt();
 		if (version != FORMAT_VERSION)
 			throw new IOException("Invalid format version: " + version);
-		
-		PlayerInfo p = new PlayerInfo();
-		
-		p.id = new UUID(in.readLong(), in.readLong());
-		p.name = in.readUTF();
-		p.guild = in.readUTF();
-		if (p.guild.isEmpty())
-			p.guild = null;
-		p.endDate = Instant.ofEpochMilli(in.readLong());
 
-		p.endStats = new HashMap<>();
+		UUID id = new UUID(in.readLong(), in.readLong());
+		String name = in.readUTF();
+		String guild = in.readUTF();
+		if (guild.isEmpty())
+			guild = null;
+		Instant date = Instant.ofEpochMilli(in.readLong());
+
+		Map<String, Map<String, Double>> stats = new HashMap<>();
 		int maps = in.readInt();
 		for (int i = 0; i < maps; i++) {
 			Map<String, Double> map = new HashMap<>();
-			p.endStats.put(in.readUTF(), map);
-			int stats = in.readInt();
-			for (int y = 0; y < stats; y++)
+			stats.put(in.readUTF(), map);
+			int count = in.readInt();
+			for (int y = 0; y < count; y++)
 				map.put(in.readUTF(), in.readDouble());
 		}
-		
-		return p;
+
+		return new PlayerInfo(Collections.unmodifiableMap(stats), name, guild, id, date);
 	}
 	
 	public void save(PlayerInfo p) {

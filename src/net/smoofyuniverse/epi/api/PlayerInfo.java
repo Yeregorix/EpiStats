@@ -36,67 +36,69 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class PlayerInfo {
 	public static final URL URL_BASE;
-	private static final Logger logger = Application.getLogger("GuildInfo");
+	private static final Logger logger = Application.getLogger("PlayerInfo");
 	private static final JsonFactory factory = new JsonFactory();
-	public Map<String, Map<String, Double>> startStats, endStats;
-	public String name, guild;
-	public UUID id;
-	public Instant startDate, endDate;
 
-	// Not a deep copy
-	public PlayerInfo copy() {
-		PlayerInfo p = new PlayerInfo();
+	public final Map<String, Map<String, Double>> startStats, endStats;
+	public final String name, guild;
+	public final UUID id;
+	public final Instant startDate, endDate;
 
-		p.startDate = this.startDate;
-		p.endDate = this.endDate;
-		p.id = this.id;
-		p.name = this.name;
-		p.guild = this.guild;
-		p.startStats = this.startStats;
-		p.endStats = this.endStats;
+	public PlayerInfo(String name, UUID id, Instant startDate, Instant endDate) {
+		this(null, null, name, null, id, startDate, endDate);
+	}
 
-		return p;
+	public PlayerInfo(Map<String, Map<String, Double>> startStats, Map<String, Map<String, Double>> endStats, String name, String guild, UUID id, Instant startDate, Instant endDate) {
+		this.startStats = startStats;
+		this.endStats = endStats;
+		this.name = name;
+		this.guild = guild;
+		this.id = id;
+		this.startDate = startDate;
+		this.endDate = endDate;
+	}
+
+	public PlayerInfo(Map<String, Map<String, Double>> endStats, String name, String guild, UUID id, Instant endDate) {
+		this(null, endStats, name, guild, id, null, endDate);
 	}
 
 	public static Optional<PlayerInfo> get(String playerName, boolean stats) {
 		try {
-			PlayerInfo p = new PlayerInfo();
-			p.read(playerName, stats);
-			p.endDate = Instant.now();
-			return Optional.of(p);
+			return Optional.of(read(playerName, stats));
 		} catch (IOException e) {
 			logger.error("Failed to get json content for player '" + playerName + "'", e);
 			return Optional.empty();
 		}
 	}
 
-	public void read(String playerName, boolean stats) throws IOException {
-		read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
+	public static PlayerInfo read(String playerName, boolean stats) throws IOException {
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig(), Instant.now());
 	}
 
-	private void read(URL url, ConnectionConfiguration config) throws IOException {
+	public static PlayerInfo read(URL url, ConnectionConfiguration config, Instant date) throws IOException {
 		HttpURLConnection co = config.openHttpConnection(url);
 		co.connect();
 
 		int code = co.getResponseCode();
 		if (code / 100 == 2) {
 			try (JsonParser json = factory.createParser(co.getInputStream())) {
-				read(json);
+				return read(json, date);
 			}
 		} else
 			throw new IOException("Invalid response code: " + code);
 	}
 
-	public void read(JsonParser json) throws IOException {
+	public static PlayerInfo read(JsonParser json, Instant date) throws IOException {
 		if (json.nextToken() != JsonToken.START_OBJECT)
 			throw new IOException("Expected to start an new object");
+
+		Map<String, Map<String, Double>> stats = null;
+		String name = null, guild = null;
+		UUID id = null;
 
 		while (json.nextToken() != JsonToken.END_OBJECT) {
 			String field = json.getCurrentName();
@@ -105,7 +107,7 @@ public class PlayerInfo {
 				if (json.nextToken() != JsonToken.VALUE_STRING)
 					throw new JsonParseException(json, "Field 'player_uuid' was expected to be a string");
 
-				this.id = idFromString(json.getValueAsString());
+				id = idFromString(json.getValueAsString());
 				continue;
 			}
 
@@ -113,13 +115,13 @@ public class PlayerInfo {
 				if (json.nextToken() != JsonToken.VALUE_STRING)
 					throw new JsonParseException(json, "Field 'player_name' was expected to be a string");
 
-				this.name = json.getValueAsString();
+				name = json.getValueAsString();
 				continue;
 			}
 
 			if (field.equals("guild")) {
 				if (json.nextToken() == JsonToken.VALUE_NULL) {
-					this.guild = null;
+					guild = null;
 					continue;
 				}
 
@@ -133,7 +135,7 @@ public class PlayerInfo {
 						if (json.nextToken() != JsonToken.VALUE_STRING)
 							throw new JsonParseException(json, "Field 'name' of the guild was expected to be a string");
 
-						this.guild = json.getValueAsString();
+						guild = json.getValueAsString();
 						continue;
 					}
 
@@ -147,11 +149,11 @@ public class PlayerInfo {
 				if (json.nextToken() != JsonToken.START_OBJECT)
 					throw new JsonParseException(json, "Field 'stats' was expected to be an object");
 
-				this.endStats = new HashMap<>();
+				stats = new HashMap<>();
 
 				while (json.nextToken() != JsonToken.END_OBJECT) {
 					Map<String, Double> map = new HashMap<>();
-					this.endStats.put(json.getCurrentName(), map);
+					stats.put(json.getCurrentName(), map);
 
 					if (json.nextToken() != JsonToken.START_OBJECT)
 						throw new JsonParseException(json, "Subfield in 'stats' was expected to be an object");
@@ -168,6 +170,15 @@ public class PlayerInfo {
 			json.nextToken();
 			json.skipChildren();
 		}
+
+		if (stats == null)
+			throw new IllegalArgumentException("Field 'stats' is missing");
+		if (name == null)
+			throw new IllegalArgumentException("Field 'name' is missing");
+		if (id == null)
+			throw new IllegalArgumentException("Field 'player_uuid' is missing");
+
+		return new PlayerInfo(Collections.unmodifiableMap(stats), name, guild, id, date);
 	}
 
 	public static UUID idFromString(String v) {
@@ -176,22 +187,30 @@ public class PlayerInfo {
 
 	public static Optional<PlayerInfo> get(UUID playerId, boolean stats) {
 		try {
-			PlayerInfo p = new PlayerInfo();
-			p.read(playerId, stats);
-			p.endDate = Instant.now();
-			return Optional.of(p);
+			return Optional.of(read(playerId, stats));
 		} catch (IOException e) {
 			logger.error("Failed to get json content for player '" + playerId + "'", e);
 			return Optional.empty();
 		}
 	}
 
-	public void read(UUID playerId, boolean stats) throws IOException {
-		read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig());
+	public static PlayerInfo read(UUID playerId, boolean stats) throws IOException {
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig(), Instant.now());
 	}
 
 	public static String idToString(UUID id) {
 		return id.toString().replace("-", "");
+	}
+
+	public static PlayerInfo merge(PlayerInfo start, PlayerInfo end) {
+		if (!start.id.equals(end.id))
+			throw new IllegalArgumentException("UUID mismatch");
+		if (start.startStats != null || end.startStats != null)
+			throw new IllegalArgumentException("Cannot merge intervals");
+		if (start.endDate.isAfter(end.endDate))
+			throw new IllegalArgumentException("Invalid interval");
+
+		return new PlayerInfo(start.endStats, end.endStats, end.name, end.guild, end.id, start.endDate, end.endDate);
 	}
 
 	static {
