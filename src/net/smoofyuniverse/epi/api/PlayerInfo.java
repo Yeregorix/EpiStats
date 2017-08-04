@@ -76,27 +76,27 @@ public class PlayerInfo {
 	}
 
 	public static PlayerInfo read(String playerName, boolean stats) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig(), Instant.now());
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig(), Instant.now(), stats);
 	}
 
-	public static PlayerInfo read(URL url, ConnectionConfiguration config, Instant date) throws IOException {
+	public static PlayerInfo read(URL url, ConnectionConfiguration config, Instant date, boolean stats) throws IOException {
 		HttpURLConnection co = config.openHttpConnection(url);
 		co.connect();
 
 		int code = co.getResponseCode();
 		if (code / 100 == 2) {
 			try (JsonParser json = factory.createParser(co.getInputStream())) {
-				return read(json, date);
+				return read(json, date, stats);
 			}
 		} else
 			throw new IOException("Invalid response code: " + code);
 	}
 
-	public static PlayerInfo read(JsonParser json, Instant date) throws IOException {
+	public static PlayerInfo read(JsonParser json, Instant date, boolean stats) throws IOException {
 		if (json.nextToken() != JsonToken.START_OBJECT)
 			throw new IOException("Expected to start an new object");
 
-		Map<String, Map<String, Double>> stats = null;
+		Map<String, Map<String, Double>> statsMap = null;
 		String name = null, guild = null;
 		UUID id = null;
 
@@ -145,15 +145,15 @@ public class PlayerInfo {
 				continue;
 			}
 
-			if (field.equals("stats")) {
+			if (stats && field.equals("stats")) {
 				if (json.nextToken() != JsonToken.START_OBJECT)
 					throw new JsonParseException(json, "Field 'stats' was expected to be an object");
 
-				stats = new HashMap<>();
+				statsMap = new HashMap<>();
 
 				while (json.nextToken() != JsonToken.END_OBJECT) {
 					Map<String, Double> map = new HashMap<>();
-					stats.put(json.getCurrentName(), map);
+					statsMap.put(json.getCurrentName(), map);
 
 					if (json.nextToken() != JsonToken.START_OBJECT)
 						throw new JsonParseException(json, "Subfield in 'stats' was expected to be an object");
@@ -171,14 +171,14 @@ public class PlayerInfo {
 			json.skipChildren();
 		}
 
-		if (stats == null)
+		if (stats && statsMap == null)
 			throw new IllegalArgumentException("Field 'stats' is missing");
 		if (name == null)
 			throw new IllegalArgumentException("Field 'name' is missing");
 		if (id == null)
 			throw new IllegalArgumentException("Field 'player_uuid' is missing");
 
-		return new PlayerInfo(Collections.unmodifiableMap(stats), name, guild, id, date);
+		return new PlayerInfo(stats ? Collections.unmodifiableMap(statsMap) : null, name, guild, id, date);
 	}
 
 	public static UUID idFromString(String v) {
@@ -195,7 +195,7 @@ public class PlayerInfo {
 	}
 
 	public static PlayerInfo read(UUID playerId, boolean stats) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig(), Instant.now());
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), Application.get().getConnectionConfig(), Instant.now(), stats);
 	}
 
 	public static String idToString(UUID id) {
