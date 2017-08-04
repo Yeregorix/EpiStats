@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
 public class EpiStats extends Application {
 
 	public EpiStats(Arguments args) {
-		super(args, "EpiStats", "1.4.3");
+		super(args, "EpiStats", "1.4.4");
 		initServices(Executors.newSingleThreadExecutor());
 
 		Platform.runLater(() -> {
