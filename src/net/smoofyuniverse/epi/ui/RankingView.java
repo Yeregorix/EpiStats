@@ -34,9 +34,12 @@ import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 import net.smoofyuniverse.epi.stats.Ranking;
 
+import java.text.DecimalFormat;
 import java.util.Optional;
 
 public final class RankingView extends ListView<Integer> {
+	public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.0#####");
+
 	private Ranking ranking;
 
 	private UserInterface ui;
@@ -97,7 +100,7 @@ public final class RankingView extends ListView<Integer> {
 			
 			this.index.setText("#" + (getIndex() +1));
 			this.name.setText(info.name);
-			this.value.setText(Double.toString(RankingView.this.ranking.getValue(p)));
+			this.value.setText(DECIMAL_FORMAT.format(RankingView.this.ranking.getValue(p)));
 			this.tooltip.setText(info.startDate == null ? StringUtil.DATETIME_FORMAT.format(info.endDate) : (StringUtil.DATETIME_FORMAT.format(info.startDate) + " - " + StringUtil.DATETIME_FORMAT.format(info.endDate)));
 			
 			return this.content;
