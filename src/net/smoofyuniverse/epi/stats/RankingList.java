@@ -34,9 +34,11 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class RankingList {
-	public static final int CURRENT_VERSION = 4, MINIMUM_VERSION = 1;
+	public static final int CURRENT_VERSION = 5, MINIMUM_VERSION = 1;
 	
 	private static final JsonFactory factory = new JsonFactory();
 	
@@ -287,6 +289,9 @@ public class RankingList {
 	public void save(DataOutputStream out) throws IOException {
 		out.writeInt(CURRENT_VERSION);
 
+		GZIPOutputStream zip = new GZIPOutputStream(out);
+		out = new DataOutputStream(zip);
+
 		boolean useIntervals = this.collection.containsIntervals();
 		out.writeBoolean(useIntervals);
 
@@ -323,6 +328,8 @@ public class RankingList {
 			}
 			r.descendingMode = d;
 		}
+
+		zip.finish();
 	}
 
 	public int getPlayerCount() {
@@ -552,6 +559,9 @@ public class RankingList {
 		int version = in.readInt();
 		if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
 			throw new IOException("Invalid format version: " + version);
+
+		if (version >= 5)
+			in = new DataInputStream(new GZIPInputStream(in));
 
 		PlayerInfo[] players;
 		if (version == 1) {
