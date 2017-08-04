@@ -36,7 +36,7 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 public class PlayerCache {
-	public static final int FORMAT_VERSION = 1;
+	public static final int CURRENT_VERSION = 1, MINIMUM_VERSION = 1;
 	
 	private static final Logger logger = Application.getLogger("PlayerCache");
 	
@@ -96,7 +96,7 @@ public class PlayerCache {
 	
 	public PlayerInfo read(DataInputStream in) throws IOException {
 		int version = in.readInt();
-		if (version != FORMAT_VERSION)
+		if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
 			throw new IOException("Invalid format version: " + version);
 
 		UUID id = new UUID(in.readLong(), in.readLong());
@@ -139,7 +139,7 @@ public class PlayerCache {
 		if (p.startDate != null || p.startStats != null)
 			throw new IllegalArgumentException("Intervals are not saved");
 
-		out.writeInt(FORMAT_VERSION);
+		out.writeInt(CURRENT_VERSION);
 		
 		out.writeLong(p.id.getMostSignificantBits());
 		out.writeLong(p.id.getLeastSignificantBits());

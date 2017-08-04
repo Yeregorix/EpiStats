@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class ObjectList {
-	public static final int FORMAT_VERSION = 1;
+	public static final int CURRENT_VERSION = 1, MINIMUM_VERSION = 1;
 	
 	private static final JsonFactory factory = new JsonFactory();
 	
@@ -81,7 +81,7 @@ public class ObjectList {
 	
 	public void merge(DataInputStream in) throws IOException {
 		int version = in.readInt();
-		if (version != FORMAT_VERSION)
+		if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
 			throw new IOException("Invalid format version: " + version);
 		
 		int count = in.readInt();
@@ -106,7 +106,7 @@ public class ObjectList {
 					throw new IOException("Format version not provided");
 				
 				int version = json.getIntValue();
-				if (version != FORMAT_VERSION)
+				if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
 					throw new IOException("Invalid format version: " + version);
 				
 				versionCheck = false;
@@ -165,7 +165,7 @@ public class ObjectList {
 	}
 	
 	public void save(DataOutputStream out) throws IOException {
-		out.writeInt(FORMAT_VERSION);
+		out.writeInt(CURRENT_VERSION);
 		
 		out.writeInt(this.guilds.size());
 		for (String g : this.guilds)
@@ -182,7 +182,7 @@ public class ObjectList {
 		json.writeStartObject();
 		
 		json.writeFieldName("format_version");
-		json.writeNumber(FORMAT_VERSION);
+		json.writeNumber(CURRENT_VERSION);
 		
 		json.writeFieldName("guilds");
 		json.writeStartArray();

@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 public class RankingList {
-	public static final int FORMAT_VERSION = 4;
+	public static final int CURRENT_VERSION = 4, MINIMUM_VERSION = 1;
 	
 	private static final JsonFactory factory = new JsonFactory();
 	
@@ -164,7 +164,7 @@ public class RankingList {
 		json.writeStartObject();
 
 		json.writeFieldName("format_version");
-		json.writeNumber(FORMAT_VERSION);
+		json.writeNumber(CURRENT_VERSION);
 
 		boolean useIntervals = this.collection.containsIntervals();
 
@@ -285,7 +285,7 @@ public class RankingList {
 	}
 
 	public void save(DataOutputStream out) throws IOException {
-		out.writeInt(FORMAT_VERSION);
+		out.writeInt(CURRENT_VERSION);
 
 		boolean useIntervals = this.collection.containsIntervals();
 		out.writeBoolean(useIntervals);
@@ -355,27 +355,24 @@ public class RankingList {
 
 		RankingList l = new RankingList();
 
-		boolean old1 = false;
+		int version = -1;
 		Instant date = null;
 
-		boolean versionCheck = true;
 		while (json.nextToken() != JsonToken.END_OBJECT) {
 			String field = json.getCurrentName();
 
-			if (versionCheck) {
+			if (version == -1) {
 				if (!field.equals("format_version") || json.nextToken() != JsonToken.VALUE_NUMBER_INT)
 					throw new IOException("Format version not provided");
 
-				int version = json.getIntValue();
-				old1 = version == 1;
-				if (version != FORMAT_VERSION && !old1 && version != 2 && version != 3) // Compatibility with older versions
+				version = json.getIntValue();
+				if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
 					throw new IOException("Invalid format version: " + version);
 
-				versionCheck = false;
 				continue;
 			}
 
-			if (old1 && field.equals("date")) {
+			if (version == 1 && field.equals("date")) {
 				if (json.nextToken() != JsonToken.VALUE_STRING)
 					throw new JsonParseException(json, "Field 'date' was expected to be a string");
 
@@ -389,7 +386,7 @@ public class RankingList {
 
 				List<PlayerInfo> players = new ArrayList<>();
 
-				if (old1) {
+				if (version == 1) {
 					if (date == null)
 						throw new IllegalStateException("Date was not provided");
 
@@ -553,12 +550,11 @@ public class RankingList {
 
 	public static RankingList read(DataInputStream in) throws IOException {
 		int version = in.readInt();
-		boolean old1 = version == 1, old2 = version == 2, old3 = version == 3; // Compatibility with older versions
-		if (version != FORMAT_VERSION && !old1 && !old2 && !old3)
+		if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
 			throw new IOException("Invalid format version: " + version);
 
 		PlayerInfo[] players;
-		if (old1) {
+		if (version == 1) {
 			Instant date = Instant.ofEpochMilli(in.readLong());
 
 			players = new PlayerInfo[in.readInt()];
@@ -566,7 +562,7 @@ public class RankingList {
 				players[i] = new PlayerInfo(in.readUTF(), null, null, date);
 			}
 		} else {
-			boolean useIntervals = !(old2 || old3) && in.readBoolean();
+			boolean useIntervals = version >= 4 && in.readBoolean();
 
 			players = new PlayerInfo[in.readInt()];
 			for (int i = 0; i < players.length; i++) {
@@ -585,7 +581,7 @@ public class RankingList {
 			Ranking r = new Ranking(l, in.readUTF());
 			boolean d = in.readBoolean();
 
-			int size = old2 ? players.length : in.readInt();
+			int size = version == 2 ? players.length : in.readInt();
 			for (int p = 0; p < size; p++)
 				r.put(in.readInt(), in.readDouble());
 

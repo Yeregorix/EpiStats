@@ -36,7 +36,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class DataCollection {
-	public static final int FORMAT_VERSION = 2;
+	public static final int CURRENT_VERSION = 2, MINIMUM_VERSION = 1;
 
 	private Map<UUID, PlayerInfo> idsToPlayers = new HashMap<>();
 	private PlayerInfo[] players;
@@ -121,7 +121,7 @@ public class DataCollection {
 	}
 
 	public void save(DataOutputStream out) throws IOException {
-		out.writeInt(FORMAT_VERSION);
+		out.writeInt(CURRENT_VERSION);
 
 		GZIPOutputStream zip = new GZIPOutputStream(out);
 		out = new DataOutputStream(zip);
@@ -164,11 +164,10 @@ public class DataCollection {
 
 	public static DataCollection read(DataInputStream in) throws IOException {
 		int version = in.readInt();
-		boolean old1 = version == 1;
-		if (version != FORMAT_VERSION && !old1)
+		if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
 			throw new IOException("Invalid format version: " + version);
 
-		if (!old1)
+		if (version >= 2)
 			in = new DataInputStream(new GZIPInputStream(in));
 
 		PlayerInfo[] players = new PlayerInfo[in.readInt()];
