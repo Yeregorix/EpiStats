@@ -34,9 +34,11 @@ import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class PlayerCache {
-	public static final int CURRENT_VERSION = 1, MINIMUM_VERSION = 1;
+	public static final int CURRENT_VERSION = 2, MINIMUM_VERSION = 1;
 	
 	private static final Logger logger = Application.getLogger("PlayerCache");
 	
@@ -99,6 +101,9 @@ public class PlayerCache {
 		if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
 			throw new IOException("Invalid format version: " + version);
 
+		if (version >= 2)
+			in = new DataInputStream(new GZIPInputStream(in));
+
 		UUID id = new UUID(in.readLong(), in.readLong());
 		String name = in.readUTF();
 		String guild = in.readUTF();
@@ -140,6 +145,9 @@ public class PlayerCache {
 			throw new IllegalArgumentException("Intervals are not saved");
 
 		out.writeInt(CURRENT_VERSION);
+
+		GZIPOutputStream zip = new GZIPOutputStream(out);
+		out = new DataOutputStream(zip);
 		
 		out.writeLong(p.id.getMostSignificantBits());
 		out.writeLong(p.id.getLeastSignificantBits());
@@ -157,5 +165,7 @@ public class PlayerCache {
 				out.writeDouble(stat.getValue());
 			}
 		}
+
+		zip.finish();
 	}
 }
