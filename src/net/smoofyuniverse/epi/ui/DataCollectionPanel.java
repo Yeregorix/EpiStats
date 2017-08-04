@@ -31,7 +31,10 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.app.State;
+import net.smoofyuniverse.common.event.Order;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
+import net.smoofyuniverse.common.fxui.field.IntegerField;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.GridUtil;
@@ -46,16 +49,21 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class DataCollectionPanel extends GridPane {
 	private static final Logger logger = Application.getLogger("DataCollectionPanel");
 
 	private Label datesL = new Label("Dates:"), startL = new Label("Début:"), startDates = new Label("Depuis toujours"), startPlayers = new Label();
-	private Label endL = new Label("Fin:"), endDates = new Label("Indéfinie"), endPlayers = new Label(), cacheL = new Label("Cache:");
+	private Label endL = new Label("Fin:"), endDates = new Label("Indéfinie"), endPlayers = new Label(), cacheL = new Label("Cache:"), threadsL = new Label("Threads:");
 	private Button loadStart = new Button("Charger"), clearStart = new Button("Effacer");
 	private Button loadEnd = new Button("Charger"), genEnd = new Button("Générer"), saveEnd = new Button("Sauvegarder");
 	private TextField cacheAge = new TextField();
+	private IntegerField threads;
 
 	private DataCollection startCol, endCol;
 	private Duration maxAge = Duration.ofDays(1);
@@ -63,6 +71,7 @@ public class DataCollectionPanel extends GridPane {
 	private UserInterface ui;
 	private EpiStats epi;
 	private PlayerCache cache;
+	private ExecutorService service;
 
 	private FileChooser chooser = new FileChooser();
 
@@ -70,6 +79,9 @@ public class DataCollectionPanel extends GridPane {
 		this.ui = ui;
 		this.epi = ui.getEpiStats();
 		this.cache = cache;
+
+		int cores = Runtime.getRuntime().availableProcessors();
+		this.threads = new IntegerField(1, cores * 2, cores);
 
 		this.loadStart.setPrefWidth(Integer.MAX_VALUE);
 		this.clearStart.setPrefWidth(Integer.MAX_VALUE);
@@ -154,24 +166,27 @@ public class DataCollectionPanel extends GridPane {
 		add(this.datesL, 0, 1);
 
 		add(this.startL, 1, 1);
-		add(this.startDates, 2, 1, 2, 1);
-		add(this.startPlayers, 4, 1);
+		add(this.startDates, 2, 1, 3, 1);
+		add(this.startPlayers, 5, 1);
 
 		add(this.loadStart, 2, 2);
-		add(this.clearStart, 3, 2);
+		add(this.clearStart, 3, 2, 2, 1);
 
 		add(this.endL, 1, 3);
-		add(this.endDates, 2, 3, 2, 1);
-		add(this.endPlayers, 4, 3);
+		add(this.endDates, 2, 3, 3, 1);
+		add(this.endPlayers, 5, 3);
 
 		add(this.loadEnd, 2, 4);
-		add(this.genEnd, 3, 4);
-		add(this.saveEnd, 4, 4);
+		add(this.genEnd, 3, 4, 2, 1);
+		add(this.saveEnd, 5, 4);
 
 		add(this.cacheL, 0, 5);
-		add(this.cacheAge, 1, 5, 3, 1);
+		add(this.cacheAge, 1, 5, 2, 1);
 
-		getColumnConstraints().addAll(GridUtil.createColumn(15), GridUtil.createColumn(10), GridUtil.createColumn(25), GridUtil.createColumn(25), GridUtil.createColumn(25));
+		add(this.threadsL, 3, 5);
+		add(this.threads, 4, 5, 3, 1);
+
+		getColumnConstraints().addAll(GridUtil.createColumn(15), GridUtil.createColumn(10), GridUtil.createColumn(25), GridUtil.createColumn(15), GridUtil.createColumn(10), GridUtil.createColumn(25));
 	}
 
 	private void parseCacheAge() {
@@ -184,38 +199,43 @@ public class DataCollectionPanel extends GridPane {
 		if (Popup.confirmation().title("Attention").message("Générer une collection de données peut être très long pour un nombre important de joueurs !\nEtes-vous sûr de vouloir continuer ?").submitAndWait()) {
 			Instant minDate = Instant.now().minus(this.maxAge);
 
-			Consumer<ObservableTask> consumer = (task) -> {
-				Set<UUID> ids = this.ui.getObjectListPanel().getObjectList().players;
-				int progress = 0, total = ids.size();
+			if (this.service == null) {
+				this.service = Executors.newCachedThreadPool();
+				Application.registerListener(State.SHUTDOWN.newListener((e) -> this.service.shutdown(), Order.DEFAULT));
+			}
 
-				logger.info("Collecting data for " + total + " players ..");
+			Consumer<ObservableTask> consumer = (task) -> {
+				DataCollector collector = new DataCollector(task, this.ui.getObjectListPanel().getObjectList().players, minDate);
+				int workers = Math.min(this.threads.getValue(), collector.total / 10);
+
+				logger.info("Collecting data for " + collector.total + " players (" + workers + " workers) ..");
 				task.setTitle("Collecte des données des joueurs ..");
 				task.setProgress(0);
 
 				long time = System.currentTimeMillis();
 
-				List<PlayerInfo> players = new ArrayList<>(total);
-				for (UUID id : ids) {
-					if (task.isCancelled())
-						return;
-					task.setMessage("Joueur: " + id);
-
-					PlayerInfo p = this.cache.read(id).orElse(null);
-					if (p == null || p.endDate.isBefore(minDate)) {
-						p = PlayerInfo.get(id, true).orElse(null);
-						if (p != null) {
-							this.cache.save(p);
-							players.add(p);
-						}
-					} else
-						players.add(p);
-
-					task.setProgress(++progress / (double) total);
+				CountDownLatch lock = new CountDownLatch(workers);
+				for (int i = 0; i < workers; i++) {
+					this.service.submit(() -> {
+						collector.collectAll();
+						lock.countDown();
+					});
 				}
 
-				logger.info("Collected data of " + players.size() + " players in " + (System.currentTimeMillis() - time) / 1000F + "s.");
+				try {
+					lock.await();
+				} catch (InterruptedException e) {
+					task.cancel();
+				}
 
-				DataCollection col = new DataCollection(players.toArray(new PlayerInfo[players.size()]));
+				if (task.isCancelled()) {
+					logger.info("Cancelled.");
+					return;
+				}
+
+				logger.info("Collected data of " + collector.players.size() + " players in " + (System.currentTimeMillis() - time) / 1000F + "s.");
+
+				DataCollection col = new DataCollection(collector.players.toArray(new PlayerInfo[collector.players.size()]));
 				setEndCollection(col);
 
 				if (notifyTaskEnd)
@@ -223,6 +243,48 @@ public class DataCollectionPanel extends GridPane {
 			};
 
 			Popup.consumer(consumer).title("Génération de la collection de données ..").submitAndWait();
+		}
+	}
+
+	private class DataCollector {
+		private ObservableTask task;
+		private Queue<UUID> ids;
+		private Instant minDate;
+
+		private List<PlayerInfo> players;
+		private transient int total, progress;
+
+		public DataCollector(ObservableTask task, Collection<UUID> ids, Instant minDate) {
+			this.task = task;
+			this.ids = new ConcurrentLinkedQueue(ids);
+			this.minDate = minDate;
+
+			this.total = ids.size();
+			this.players = Collections.synchronizedList(new ArrayList<>());
+		}
+
+		public void collectAll() {
+			while (!this.ids.isEmpty() && !this.task.isCancelled())
+				collectNext();
+		}
+
+		public void collectNext() {
+			UUID id = this.ids.poll();
+			if (id == null)
+				return;
+			this.task.setMessage("Joueur: " + id);
+
+			PlayerInfo p = DataCollectionPanel.this.cache.read(id).orElse(null);
+			if (p == null || p.endDate.isBefore(this.minDate)) {
+				p = PlayerInfo.get(id, true).orElse(null);
+				if (p != null) {
+					DataCollectionPanel.this.cache.save(p);
+					this.players.add(p);
+				}
+			} else
+				this.players.add(p);
+
+			this.task.setProgress(++this.progress / (double) this.total);
 		}
 	}
 

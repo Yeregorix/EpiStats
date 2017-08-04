@@ -166,6 +166,7 @@ public class ObjectListPanel extends GridPane {
 					logger.info("Refresh task ended.");
 					saveObjectList();
 				} else {
+					logger.info("Cancelled.");
 					readObjectList();
 					updateObjectList();
 				}
