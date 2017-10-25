@@ -75,10 +75,10 @@ public class RankingList {
 			this.rankings.put(newName, r.copy(newName));
 	}
 
-	public void rename(String name, String newName) {
+	public void move(String name, String newName) {
 		Ranking r = this.rankings.remove(name);
 		if (r != null)
-			this.rankings.put(newName, r.rename(newName));
+			this.rankings.put(newName, r.copy(newName));
 	}
 
 	public Collection<Ranking> getRankings() {

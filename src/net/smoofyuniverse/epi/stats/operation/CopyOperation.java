@@ -23,36 +23,18 @@
 package net.smoofyuniverse.epi.stats.operation;
 
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
-import net.smoofyuniverse.epi.stats.Ranking;
 import net.smoofyuniverse.epi.stats.RankingList;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.function.Predicate;
+public class CopyOperation implements RankingOperation {
+	public final String name, newName;
 
-public class DeleteCategory implements RankingOperation {
-	public final Predicate<String> category;
-
-	public DeleteCategory(Predicate<String> category) {
-		this.category = category;
+	public CopyOperation(String name, String newName) {
+		this.name = RankingOperation.validateName(name);
+		this.newName = RankingOperation.validateName(newName);
 	}
 
 	@Override
 	public void accept(RankingList list, ObservableTask task) {
-		task.setTitle("Suppression des catégories ..");
-		task.setProgress(0);
-		
-		Collection<Ranking> l = list.getRankings();
-		int total = l.size(), i = 0;
-		
-		Iterator<Ranking> it = l.iterator();
-		while (it.hasNext()) {
-			Ranking r = it.next();
-			if (this.category.test(r.name)) {
-				task.setMessage("Suppression de " + r.name + " ..");
-				it.remove();
-			}
-			task.setProgress(++i / total);
-		}
+		list.copy(this.name, this.newName);
 	}
 }

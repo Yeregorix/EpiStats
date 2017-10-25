@@ -22,9 +22,12 @@
 
 package net.smoofyuniverse.epi.stats;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.TreeSet;
 
-public class Ranking implements Comparator<Integer> {
+public class Ranking {
 	public final RankingList parent;
 	public final String name;
 	public boolean descendingMode;
@@ -33,7 +36,7 @@ public class Ranking implements Comparator<Integer> {
 
 	public Ranking(RankingList parent, String name) {
 		this(new double[parent.getCollection().getPlayerCount()], parent, name);
-		this.players = new TreeSet<>(this);
+		this.players = new TreeSet<>(this::compare);
 	}
 
 	private Ranking(double[] values, RankingList parent, String name) {
@@ -47,17 +50,15 @@ public class Ranking implements Comparator<Integer> {
 		r.players = (TreeSet<Integer>) this.players.clone();
 		return r;
 	}
-
-	public Ranking rename(String newName) {
-		Ranking r = new Ranking(this.values, this.parent, newName);
-		r.players = this.players;
-		return r;
-	}
 	
 	public void put(int p, double v) {
-		this.values[p] = v;
-		if (Double.isFinite(v))
+		if (Double.isNaN(v)) {
+			this.values[p] = 0;
+			this.players.remove(p);
+		} else {
+			this.values[p] = v;
 			this.players.add(p);
+		}
 	}
 
 	public int size() {
@@ -71,21 +72,20 @@ public class Ranking implements Comparator<Integer> {
 	public Collection<Integer> collection() {
 		return this.descendingMode ? this.players.descendingSet() : this.players;
 	}
-	
+
 	public double getValue(int p) {
-		return this.values[p];
+		return this.players.contains(p) ? this.values[p] : Double.NaN;
 	}
 	
 	public int getRank(int p) {
-		if (Double.isFinite(this.values[p])) {
+		if (this.players.contains(p)) {
 			int r = this.players.headSet(p).size();
 			return r == 0 ? 0 : r - 1;
 		}
 		return -1;
 	}
 
-	@Override
-	public int compare(Integer p1, Integer p2) {
-		return this.values[p1] > this.values[p2] ? -1 : 1;
+	public int compare(int p1, int p2) {
+		return -Double.compare(this.values[p1], this.values[p2]);
 	}
 }

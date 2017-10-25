@@ -32,12 +32,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.Predicate;
 
-public class DebugCategory implements RankingOperation {
-	private static final Logger logger = Application.getLogger("DebugCategory");
+public class DebugOperation implements RankingOperation {
+	private static final Logger logger = Application.getLogger("DebugOperation");
 	
 	public final Predicate<String> category;
 
-	public DebugCategory(Predicate<String> category) {
+	public DebugOperation(Predicate<String> category) {
 		this.category = category;
 	}
 

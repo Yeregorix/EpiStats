@@ -64,31 +64,31 @@ public interface RankingOperation {
 		switch (args[0]) {
 			case "import":
 				if (args.length == 2)
-					return new ImportCategory(args[1]);
+					return new ImportOperation(args[1]);
 				break;
 			case "delete":
 				if (args.length == 2)
-					return new DeleteCategory(StringUtil.simplePredicate(args[1]));
+					return new DeleteOperation(StringUtil.simplePredicate(args[1]));
 				break;
-			case "rename":
+			case "move":
 				if (args.length == 3)
-					return new RenameCategory(args[1], args[2]);
+					return new MoveOperation(args[1], args[2]);
 				break;
 			case "copy":
 				if (args.length == 3)
-					return new CopyCategory(args[1], args[2]);
+					return new CopyOperation(args[1], args[2]);
 				break;
 			case "inverse":
 				if (args.length == 2)
-					return new InverseOrder(StringUtil.simplePredicate(args[1]));
+					return new InverseOperation(StringUtil.simplePredicate(args[1]));
 				break;
 			case "debug":
 				if (args.length == 2)
-					return new DebugCategory(StringUtil.simplePredicate(args[1]));
+					return new DebugOperation(StringUtil.simplePredicate(args[1]));
 				break;
 			case "generate":
 				if (args.length > 2)
-					return new GenerateCategory(args[1], new Expression(line.substring(args[1].length() + 10)));
+					return new GenerateOperation(args[1], new Expression(line.substring(args[1].length() + 10)));
 				break;
 			default:
 				throw new IllegalArgumentException("Invalid operation: " + args[0]);

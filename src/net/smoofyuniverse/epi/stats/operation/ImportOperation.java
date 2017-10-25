@@ -29,10 +29,10 @@ import net.smoofyuniverse.epi.stats.RankingList;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class ImportCategory implements RankingOperation {
+public class ImportOperation implements RankingOperation {
 	public final String category;
 
-	public ImportCategory(String category) {
+	public ImportOperation(String category) {
 		this.category = category;
 	}
 

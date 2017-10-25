@@ -29,11 +29,11 @@ import org.mariuszgromada.math.mxparser.Expression;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class GenerateCategory implements RankingOperation {
+public class GenerateOperation implements RankingOperation {
 	public final String category;
 	public final Expression expression;
 
-	public GenerateCategory(String category, Expression expression) {
+	public GenerateOperation(String category, Expression expression) {
 		this.category = RankingOperation.validateName(category);
 		if (!expression.checkLexSyntax())
 			throw new IllegalArgumentException("Invalid syntax");

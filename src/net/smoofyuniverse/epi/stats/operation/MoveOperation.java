@@ -25,16 +25,16 @@ package net.smoofyuniverse.epi.stats.operation;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.epi.stats.RankingList;
 
-public class CopyCategory implements RankingOperation {
+public class MoveOperation implements RankingOperation {
 	public final String name, newName;
 
-	public CopyCategory(String name, String newName) {
+	public MoveOperation(String name, String newName) {
 		this.name = RankingOperation.validateName(name);
 		this.newName = RankingOperation.validateName(newName);
 	}
 
 	@Override
 	public void accept(RankingList list, ObservableTask task) {
-		list.copy(this.name, this.newName);
+		list.move(this.name, this.newName);
 	}
 }

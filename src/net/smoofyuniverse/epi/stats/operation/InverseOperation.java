@@ -29,10 +29,10 @@ import net.smoofyuniverse.epi.stats.RankingList;
 import java.util.Collection;
 import java.util.function.Predicate;
 
-public class InverseOrder implements RankingOperation {
+public class InverseOperation implements RankingOperation {
 	public final Predicate<String> category;
 
-	public InverseOrder(Predicate<String> category) {
+	public InverseOperation(Predicate<String> category) {
 		this.category = category;
 	}
 
