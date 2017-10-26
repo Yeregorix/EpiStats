@@ -24,6 +24,7 @@ package net.smoofyuniverse.epi.ui;
 
 import com.sun.javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.Node;
+import javafx.scene.control.IndexedCell;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Tooltip;
@@ -57,7 +58,10 @@ public final class RankingView extends ListView<Integer> {
 
 	public void scrollToVisible(int index) {
 		VirtualFlow<?> flow = (VirtualFlow<?>) lookup(".virtual-flow");
-		int first = flow.getFirstVisibleCell().getIndex();
+		IndexedCell firstCell = flow.getFirstVisibleCell();
+		if (firstCell == null)
+			return;
+		int first = firstCell.getIndex();
 		int last = flow.getLastVisibleCell().getIndex();
 		if (index <= first) {
 			while (index <= first && flow.adjustPixels(-1) < 0) {

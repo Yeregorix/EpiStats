@@ -87,8 +87,9 @@ public final class RankingListPanel extends GridPane {
 		});
 		
 		this.index.valueProperty().addListener((v, oldV, newV) -> {
+			Ranking r = this.ui.getRankingView().currentRanking().orElse(null);
 			int i = newV.intValue();
-			if (this.list == null) {
+			if (r == null || this.list == null) {
 				if (i != 0) {
 					i = 0;
 					this.index.valueProperty().set(i);
@@ -97,8 +98,8 @@ public final class RankingListPanel extends GridPane {
 				if (i < 0) {
 					i = 0;
 					this.index.valueProperty().set(i);
-				} else if (i >= this.list.getPlayerCount()) {
-					i = this.list.getPlayerCount();
+				} else if (i >= r.size()) {
+					i = r.size();
 					this.index.valueProperty().set(i);
 				}
 

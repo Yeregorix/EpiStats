@@ -86,6 +86,10 @@ public interface RankingOperation {
 				if (args.length == 2)
 					return new DebugOperation(StringUtil.simplePredicate(args[1]));
 				break;
+			case "filter":
+				if (args.length > 2)
+					return new FilterOperation(StringUtil.simplePredicate(args[1]), new Expression(line.substring(args[1].length() + 8)));
+				break;
 			case "generate":
 				if (args.length > 2)
 					return new GenerateOperation(args[1], new Expression(line.substring(args[1].length() + 10)));
