@@ -60,16 +60,19 @@ public class Ranking {
 	}
 	
 	public void put(int p, double v) {
+		this.players.remove(p);
 		this.values[p] = v;
-		if (Double.isNaN(v))
-			this.players.remove(p);
-		else
+		if (!Double.isNaN(v))
 			this.players.add(p);
 	}
 
 	public void remove(int p) {
-		this.values[p] = Double.NaN;
 		this.players.remove(p);
+		this.values[p] = Double.NaN;
+	}
+
+	public boolean contains(int p) {
+		return !Double.isNaN(this.values[p]);
 	}
 
 	public int size() {
@@ -86,10 +89,6 @@ public class Ranking {
 
 	public int getRank(int p) {
 		return contains(p) ? this.players.headSet(p).size() : -1;
-	}
-
-	public boolean contains(int p) {
-		return !Double.isNaN(this.values[p]);
 	}
 
 	public int compare(int p1, int p2) {
