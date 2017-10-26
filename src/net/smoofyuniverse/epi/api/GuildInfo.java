@@ -54,7 +54,11 @@ public final class GuildInfo {
 		try {
 			return Optional.of(read(guildName));
 		} catch (IOException e) {
-			logger.error("Failed to get json content for guild '" + guildName + "'", e);
+			String msg = e.getMessage();
+			if (msg != null && msg.startsWith("Invalid response code"))
+				logger.error("Failed to get json content for guild '" + guildName + "' (" + msg + ")");
+			else
+				logger.error("Failed to get json content for guild '" + guildName + "'", e);
 			return Optional.empty();
 		}
 	}
