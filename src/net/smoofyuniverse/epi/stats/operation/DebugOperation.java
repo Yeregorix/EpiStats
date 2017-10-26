@@ -28,8 +28,8 @@ import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.epi.stats.Ranking;
 import net.smoofyuniverse.epi.stats.RankingList;
 
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class DebugOperation implements RankingOperation {
@@ -57,14 +57,12 @@ public class DebugOperation implements RankingOperation {
 		task.setTitle("Debug des catégories ..");
 		task.setProgress(0);
 
-		Collection<Ranking> l = list.getRankings();
+		List<Ranking> l = list.list(this.category);
 		int total = l.size(), i = 0;
 
 		for (Ranking r : l) {
-			if (this.category.test(r.name)) {
-				task.setMessage("Debug de " + r.name + " ..");
-				debug(r);
-			}
+			task.setMessage("Debug de " + r.name + " ..");
+			debug(r);
 			task.setProgress(++i / total);
 		}
 	}

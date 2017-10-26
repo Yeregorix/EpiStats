@@ -31,12 +31,14 @@ public class Ranking {
 	public final RankingList parent;
 	public final String name;
 	public boolean descendingMode;
-	private double[] values;
+
 	private TreeSet<Integer> players;
+	private double[] values;
 
 	public Ranking(RankingList parent, String name) {
 		this(new double[parent.getCollection().getPlayerCount()], parent, name);
 		this.players = new TreeSet<>(this::compare);
+		Arrays.fill(this.values, Double.NaN);
 	}
 
 	private Ranking(double[] values, RankingList parent, String name) {
@@ -48,17 +50,16 @@ public class Ranking {
 	public Ranking copy(String newName) {
 		Ranking r = new Ranking(Arrays.copyOf(this.values, this.values.length), this.parent, newName);
 		r.players = (TreeSet<Integer>) this.players.clone();
+		r.descendingMode = this.descendingMode;
 		return r;
 	}
 	
 	public void put(int p, double v) {
-		if (Double.isNaN(v)) {
-			this.values[p] = 0;
+		this.values[p] = v;
+		if (Double.isNaN(v))
 			this.players.remove(p);
-		} else {
-			this.values[p] = v;
+		else
 			this.players.add(p);
-		}
 	}
 
 	public int size() {
@@ -74,18 +75,19 @@ public class Ranking {
 	}
 
 	public double getValue(int p) {
-		return this.players.contains(p) ? this.values[p] : Double.NaN;
+		return this.values[p];
 	}
-	
+
 	public int getRank(int p) {
-		if (this.players.contains(p)) {
-			int r = this.players.headSet(p).size();
-			return r == 0 ? 0 : r - 1;
-		}
-		return -1;
+		return contains(p) ? this.players.headSet(p).size() : -1;
+	}
+
+	public boolean contains(int p) {
+		return !Double.isNaN(this.values[p]);
 	}
 
 	public int compare(int p1, int p2) {
-		return -Double.compare(this.values[p1], this.values[p2]);
+		int r = Double.compare(this.values[p1], this.values[p2]);
+		return r == 0 ? Integer.compare(p1, p2) : -r;
 	}
 }

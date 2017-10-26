@@ -85,6 +85,27 @@ public class RankingList {
 		return this.rankings.values();
 	}
 
+	public List<Ranking> list(Predicate<String> predicate) {
+		List<Ranking> l = new ArrayList<>();
+		for (Ranking r : this.rankings.values()) {
+			if (predicate.test(r.name))
+				l.add(r);
+		}
+		return l;
+	}
+
+	public int remove(Predicate<String> predicate) {
+		int count = 0;
+		Iterator<Ranking> it = this.rankings.values().iterator();
+		while (it.hasNext()) {
+			if (predicate.test(it.next().name)) {
+				it.remove();
+				count++;
+			}
+		}
+		return count;
+	}
+
 	public Argument[] getAllArguments(AtomicInteger player) {
 		Argument[] args = new Argument[this.rankings.size() * 2 + this.extensions.size()];
 		int i = 0;
@@ -107,10 +128,10 @@ public class RankingList {
 		}, player);
 	}
 
-	public double total(Predicate<String> category, int player) {
+	public double total(Predicate<String> predicate, int player) {
 		double total = 0;
 		for (Ranking r : this.rankings.values()) {
-			if (category.test(r.name))
+			if (predicate.test(r.name))
 				total += r.getValue(player);
 		}
 		return total;
