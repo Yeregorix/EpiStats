@@ -236,9 +236,7 @@ public class RankingList {
 			json.writeFieldName("content");
 			json.writeStartArray();
 			r.descendingMode = false;
-			Iterator<Integer> it = r.iterator();
-			while (it.hasNext()) {
-				int p = it.next();
+			for (int p : r.collection()) {
 				json.writeNumber(p);
 				json.writeNumber(r.getValue(p));
 			}
@@ -284,7 +282,7 @@ public class RankingList {
 			out.write(r.name);
 
 			rankings[i] = r;
-			iterators[i++] = r.iterator();
+			iterators[i++] = r.collection().iterator();
 		}
 
 		int total = getPlayerCount();
@@ -341,9 +339,7 @@ public class RankingList {
 
 			r.descendingMode = false;
 			out.writeInt(r.size());
-			Iterator<Integer> it = r.iterator();
-			while (it.hasNext()) {
-				int p = it.next();
+			for (int p : r.collection()) {
 				out.writeInt(p);
 				out.writeDouble(r.getValue(p));
 			}

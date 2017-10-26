@@ -113,14 +113,12 @@ public final class RankingListPanel extends GridPane {
 			if (r == null || this.list == null)
 				return;
 			String name = newV.toLowerCase();
-			
-			int i = 0;
-			Iterator<Integer> it = r.iterator();
-			while (it.hasNext()) {
-				int p = it.next();
+
+			int i = 1;
+			for (int p : r.collection()) {
 				String n = this.list.getPlayer(p).name;
 				if (n.toLowerCase().startsWith(name)) {
-					this.index.valueProperty().set(i +1);
+					this.index.valueProperty().set(i);
 					break;
 				}
 				i++;

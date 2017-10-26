@@ -23,8 +23,8 @@
 package net.smoofyuniverse.epi.stats;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.NavigableSet;
 import java.util.TreeSet;
 
 public class Ranking {
@@ -32,26 +32,31 @@ public class Ranking {
 	public final String name;
 	public boolean descendingMode;
 
-	private TreeSet<Integer> players;
+	private NavigableSet<Integer> players, unmodifiablePlayers;
 	private double[] values;
 
 	public Ranking(RankingList parent, String name) {
-		this(new double[parent.getCollection().getPlayerCount()], parent, name);
 		this.players = new TreeSet<>(this::compare);
+		this.unmodifiablePlayers = Collections.unmodifiableNavigableSet(this.players);
+		this.values = new double[parent.getCollection().getPlayerCount()];
 		Arrays.fill(this.values, Double.NaN);
-	}
 
-	private Ranking(double[] values, RankingList parent, String name) {
-		this.values = values;
 		this.parent = parent;
 		this.name = name;
 	}
 
+	private Ranking(NavigableSet<Integer> players, double[] values, RankingList parent, String name, boolean descendingMode) {
+		this.players = players;
+		this.unmodifiablePlayers = Collections.unmodifiableNavigableSet(this.players);
+		this.values = values;
+
+		this.parent = parent;
+		this.name = name;
+		this.descendingMode = descendingMode;
+	}
+
 	public Ranking copy(String newName) {
-		Ranking r = new Ranking(Arrays.copyOf(this.values, this.values.length), this.parent, newName);
-		r.players = (TreeSet<Integer>) this.players.clone();
-		r.descendingMode = this.descendingMode;
-		return r;
+		return new Ranking((TreeSet) ((TreeSet) this.players).clone(), Arrays.copyOf(this.values, this.values.length), this.parent, newName, this.descendingMode);
 	}
 	
 	public void put(int p, double v) {
@@ -62,16 +67,17 @@ public class Ranking {
 			this.players.add(p);
 	}
 
+	public void remove(int p) {
+		this.values[p] = Double.NaN;
+		this.players.remove(p);
+	}
+
 	public int size() {
 		return this.players.size();
 	}
-	
-	public Iterator<Integer> iterator() {
-		return this.descendingMode ? this.players.descendingIterator() : this.players.iterator();
-	}
-	
-	public Collection<Integer> collection() {
-		return this.descendingMode ? this.players.descendingSet() : this.players;
+
+	public NavigableSet<Integer> collection() {
+		return this.descendingMode ? this.unmodifiablePlayers.descendingSet() : this.unmodifiablePlayers;
 	}
 
 	public double getValue(int p) {

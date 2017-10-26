@@ -28,7 +28,6 @@ import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.epi.stats.Ranking;
 import net.smoofyuniverse.epi.stats.RankingList;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -41,17 +40,6 @@ public class DebugOperation implements RankingOperation {
 		this.category = category;
 	}
 
-	public static void debug(Ranking r) {
-		logger.debug("Catégorie: " + r.name);
-		int i = 1;
-		Iterator<Integer> it = r.iterator();
-		while (it.hasNext()) {
-			int p = it.next();
-			logger.debug(i + " - " + r.parent.getPlayer(p).name + ": " + r.getValue(p));
-			i++;
-		}
-	}
-	
 	@Override
 	public void accept(RankingList list, ObservableTask task) {
 		task.setTitle("Debug des catégories ..");
@@ -63,7 +51,14 @@ public class DebugOperation implements RankingOperation {
 		for (Ranking r : l) {
 			task.setMessage("Debug de " + r.name + " ..");
 			debug(r);
-			task.setProgress(++i / total);
+			task.setProgress(++i / (double) total);
 		}
+	}
+
+	public static void debug(Ranking r) {
+		logger.debug("Catégorie: " + r.name);
+		int i = 1;
+		for (int p : r.collection())
+			logger.debug(i++ + " - " + r.parent.getPlayer(p).name + ": " + r.getValue(p));
 	}
 }
