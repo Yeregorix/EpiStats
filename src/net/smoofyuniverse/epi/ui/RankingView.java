@@ -64,11 +64,11 @@ public final class RankingView extends ListView<Integer> {
 		int first = firstCell.getIndex();
 		int last = flow.getLastVisibleCell().getIndex();
 		if (index <= first) {
-			while (index <= first && flow.adjustPixels(-1) < 0) {
+			while (index <= first && flow.adjustPixels((index - first) - 1) < 0) {
 				first = flow.getFirstVisibleCell().getIndex();
 			}
 		} else {
-			while (index >= last && flow.adjustPixels(1) > 0) {
+			while (index >= last && flow.adjustPixels((index - last) + 1) > 0) {
 				last = flow.getLastVisibleCell().getIndex();
 			}
 		}
