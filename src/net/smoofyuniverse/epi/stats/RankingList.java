@@ -229,18 +229,15 @@ public class RankingList {
 			json.writeFieldName("name");
 			json.writeString(r.name);
 
-			boolean d = r.descendingMode;
 			json.writeFieldName("descending");
-			json.writeBoolean(d);
+			json.writeBoolean(r.descending);
 
 			json.writeFieldName("content");
 			json.writeStartArray();
-			r.descendingMode = false;
-			for (int p : r.collection()) {
+			for (int p : r.collection().originalOrder()) {
 				json.writeNumber(p);
 				json.writeNumber(r.getValue(p));
 			}
-			r.descendingMode = d;
 
 			json.writeEndArray();
 			json.writeEndObject();
@@ -334,16 +331,13 @@ public class RankingList {
 		out.writeInt(this.rankings.size());
 		for (Ranking r : this.rankings.values()) {
 			out.writeUTF(r.name);
-			boolean d = r.descendingMode;
-			out.writeBoolean(d);
+			out.writeBoolean(r.descending);
 
-			r.descendingMode = false;
 			out.writeInt(r.size());
-			for (int p : r.collection()) {
+			for (int p : r.collection().originalOrder()) {
 				out.writeInt(p);
 				out.writeDouble(r.getValue(p));
 			}
-			r.descendingMode = d;
 		}
 
 		zip.finish();
@@ -546,7 +540,7 @@ public class RankingList {
 								for (int i = 0; i < players.size(); i++)
 									r.put(players.get(i), values.get(i));
 
-								r.descendingMode = descending;
+								r.descending = descending;
 								l.rankings.put(r.name, r);
 
 								name = null;
@@ -612,7 +606,7 @@ public class RankingList {
 			for (int p = 0; p < size; p++)
 				r.put(in.readInt(), in.readDouble());
 
-			r.descendingMode = d;
+			r.descending = d;
 			l.rankings.put(r.name, r);
 		}
 

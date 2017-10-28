@@ -22,53 +22,55 @@
 
 package net.smoofyuniverse.epi.stats;
 
+import net.smoofyuniverse.epi.util.ImmutableList;
+
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.NavigableSet;
-import java.util.TreeSet;
+import java.util.HashSet;
 
 public class Ranking {
 	public final RankingList parent;
 	public final String name;
-	public boolean descendingMode;
+	public boolean descending;
 
-	private NavigableSet<Integer> players, unmodifiablePlayers;
+	private HashSet<Integer> players;
+	private ImmutableList<Integer> sortedPlayers;
 	private double[] values;
 
 	public Ranking(RankingList parent, String name) {
-		this.players = new TreeSet<>(this::compare);
-		this.unmodifiablePlayers = Collections.unmodifiableNavigableSet(this.players);
-		this.values = new double[parent.getCollection().getPlayerCount()];
+		this(new HashSet<>(), new double[parent.getCollection().getPlayerCount()], parent, name, false);
 		Arrays.fill(this.values, Double.NaN);
-
-		this.parent = parent;
-		this.name = name;
 	}
 
-	private Ranking(NavigableSet<Integer> players, double[] values, RankingList parent, String name, boolean descendingMode) {
+	private Ranking(HashSet<Integer> players, double[] values, RankingList parent, String name, boolean descending) {
 		this.players = players;
-		this.unmodifiablePlayers = Collections.unmodifiableNavigableSet(this.players);
 		this.values = values;
 
 		this.parent = parent;
 		this.name = name;
-		this.descendingMode = descendingMode;
+		this.descending = descending;
 	}
 
 	public Ranking copy(String newName) {
-		return new Ranking((TreeSet) ((TreeSet) this.players).clone(), Arrays.copyOf(this.values, this.values.length), this.parent, newName, this.descendingMode);
+		return new Ranking((HashSet) this.players.clone(), this.values.clone(), this.parent, newName, this.descending);
 	}
 	
 	public void put(int p, double v) {
-		this.players.remove(p);
-		this.values[p] = v;
-		if (!Double.isNaN(v))
-			this.players.add(p);
+		if (Double.isNaN(v)) {
+			remove(p);
+		} else {
+			if (!contains(p))
+				this.players.add(p);
+			this.values[p] = v;
+			this.sortedPlayers = null;
+		}
 	}
 
 	public void remove(int p) {
-		this.players.remove(p);
-		this.values[p] = Double.NaN;
+		if (contains(p)) {
+			this.players.remove(p);
+			this.values[p] = Double.NaN;
+			this.sortedPlayers = null;
+		}
 	}
 
 	public boolean contains(int p) {
@@ -79,16 +81,18 @@ public class Ranking {
 		return this.players.size();
 	}
 
-	public NavigableSet<Integer> collection() {
-		return this.descendingMode ? this.unmodifiablePlayers.descendingSet() : this.unmodifiablePlayers;
+	public int getRank(int p) {
+		return contains(p) ? collection().indexOf(p) : -1;
 	}
 
 	public double getValue(int p) {
 		return this.values[p];
 	}
 
-	public int getRank(int p) {
-		return contains(p) ? collection().headSet(p).size() : -1;
+	public ImmutableList<Integer> collection() {
+		if (this.sortedPlayers == null)
+			this.sortedPlayers = ImmutableList.sortedCopyOf(this.players, this::compare);
+		return this.descending ? this.sortedPlayers.inverseOrder() : this.sortedPlayers;
 	}
 
 	public int compare(int p1, int p2) {

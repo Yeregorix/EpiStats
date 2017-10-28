@@ -53,7 +53,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
 public class DataCollectionPanel extends GridPane {
 	private static final Logger logger = Application.getLogger("DataCollectionPanel");
@@ -101,6 +100,7 @@ public class DataCollectionPanel extends GridPane {
 				return;
 			Path file = f.toPath();
 
+			setStartCollection(null);
 			this.epi.getExecutor().submit(() -> {
 				try {
 					logger.debug("Reading data collection from file ..");
@@ -120,6 +120,7 @@ public class DataCollectionPanel extends GridPane {
 				return;
 			Path file = f.toPath();
 
+			setEndCollection(null);
 			this.epi.getExecutor().submit(() -> {
 				try {
 					logger.debug("Reading data collection from file ..");
@@ -204,7 +205,9 @@ public class DataCollectionPanel extends GridPane {
 				Application.registerListener(State.SHUTDOWN.newListener((e) -> this.service.shutdown(), Order.DEFAULT));
 			}
 
-			Consumer<ObservableTask> consumer = (task) -> {
+			setEndCollection(null);
+
+			Popup.consumer((task) -> {
 				DataCollector collector = new DataCollector(task, this.ui.getObjectListPanel().getObjectList().players, minDate);
 				int workers = Math.min(this.threads.getValue(), collector.total / 10);
 
@@ -240,9 +243,7 @@ public class DataCollectionPanel extends GridPane {
 
 				if (notifyTaskEnd)
 					Popup.info().title("Génération terminée").message("Une collection contenant " + col.getPlayerCount() + " " + (col.getPlayerCount() > 1 ? "joueurs" : "joueur") + " a été générée.").show();
-			};
-
-			Popup.consumer(consumer).title("Génération de la collection de données ..").submitAndWait();
+			}).title("Génération de la collection de données ..").submitAndWait();
 		}
 	}
 
@@ -294,6 +295,8 @@ public class DataCollectionPanel extends GridPane {
 				this.startCol = null;
 				this.startDates.setText("Depuis toujours");
 				this.startPlayers.setText(null);
+
+				System.gc();
 			} else {
 				if (col.containsIntervals())
 					throw new IllegalArgumentException("Intervals");
@@ -312,6 +315,8 @@ public class DataCollectionPanel extends GridPane {
 				this.endCol = null;
 				this.endDates.setText("Indéfinie");
 				this.endPlayers.setText(null);
+
+				System.gc();
 			} else {
 				if (col.containsIntervals())
 					throw new IllegalArgumentException("Intervals");

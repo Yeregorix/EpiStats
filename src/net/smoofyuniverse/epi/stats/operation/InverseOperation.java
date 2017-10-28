@@ -46,7 +46,7 @@ public class InverseOperation implements RankingOperation {
 
 		for (Ranking r : l) {
 			task.setMessage("Inversion de " + r.name + " ..");
-			r.descendingMode = !r.descendingMode;
+			r.descending = !r.descending;
 			task.setProgress(++i / (double) total);
 		}
 	}
