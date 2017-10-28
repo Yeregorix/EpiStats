@@ -88,7 +88,7 @@ public class Ranking {
 	}
 
 	public int getRank(int p) {
-		return contains(p) ? this.players.headSet(p).size() : -1;
+		return contains(p) ? collection().headSet(p).size() : -1;
 	}
 
 	public int compare(int p1, int p2) {
