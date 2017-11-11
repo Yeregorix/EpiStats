@@ -56,6 +56,10 @@ public class RankingList {
 		return this.collection;
 	}
 
+	public Optional<Ranking> get(String name) {
+		return Optional.ofNullable(this.rankings.get(name));
+	}
+
 	public Ranking getOrCreate(String name) {
 		Ranking r = this.rankings.get(name);
 		if (r == null) {
@@ -65,7 +69,8 @@ public class RankingList {
 			int i = name.indexOf('_');
 			if (i != -1)
 				this.extensions.add(name.substring(i + 1));
-		}
+		} else
+			r.descending = false;
 		return r;
 	}
 
