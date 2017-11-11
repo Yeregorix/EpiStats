@@ -25,60 +25,68 @@ package net.smoofyuniverse.epi.stats;
 import net.smoofyuniverse.epi.util.ImmutableList;
 
 import java.util.Arrays;
-import java.util.HashSet;
 
 public class Ranking {
 	public final RankingList parent;
 	public final String name;
-	public boolean descending;
+	public boolean descending = false;
 
-	private HashSet<Integer> players;
 	private ImmutableList<Integer> sortedPlayers;
 	private double[] values;
+	private int size = 0;
 
 	public Ranking(RankingList parent, String name) {
-		this(new HashSet<>(), new double[parent.getCollection().getPlayerCount()], parent, name, false);
+		this.values = new double[parent.getCollection().getPlayerCount()];
+		this.parent = parent;
+		this.name = name;
 		Arrays.fill(this.values, Double.NaN);
 	}
 
-	private Ranking(HashSet<Integer> players, double[] values, RankingList parent, String name, boolean descending) {
-		this.players = players;
-		this.values = values;
-
-		this.parent = parent;
-		this.name = name;
-		this.descending = descending;
+	private Ranking(Ranking r, String newName) {
+		this.values = Arrays.copyOf(r.values, r.values.length);
+		this.parent = r.parent;
+		this.name = newName;
+		this.descending = r.descending;
+		this.size = r.size;
 	}
 
 	public Ranking copy(String newName) {
-		return new Ranking((HashSet) this.players.clone(), this.values.clone(), this.parent, newName, this.descending);
-	}
-	
-	public void put(int p, double v) {
-		if (Double.isNaN(v)) {
-			remove(p);
-		} else {
-			if (!contains(p))
-				this.players.add(p);
-			this.values[p] = v;
-			this.sortedPlayers = null;
-		}
+		return new Ranking(this, newName);
 	}
 
-	public void remove(int p) {
-		if (contains(p)) {
-			this.players.remove(p);
+	public double put(int p, double v) {
+		double oldV = this.values[p];
+		if (v == v) {
+			this.values[p] = v;
+			if (v != oldV)
+				this.sortedPlayers = null;
+			if (oldV != oldV)
+				this.size++;
+		} else if (oldV == oldV) {
+			this.values[p] = v;
+			this.sortedPlayers = null;
+			this.size--;
+		}
+		return oldV;
+	}
+
+	public double remove(int p) {
+		double oldV = this.values[p];
+		if (oldV == oldV) {
 			this.values[p] = Double.NaN;
 			this.sortedPlayers = null;
+			this.size--;
 		}
+		return oldV;
 	}
 
 	public boolean contains(int p) {
-		return !Double.isNaN(this.values[p]);
+		double v = this.values[p];
+		return v == v;
 	}
 
 	public int size() {
-		return this.players.size();
+		return this.size;
 	}
 
 	public int getRank(int p) {
@@ -91,8 +99,25 @@ public class Ranking {
 
 	public ImmutableList<Integer> collection() {
 		if (this.sortedPlayers == null)
-			this.sortedPlayers = ImmutableList.sortedCopyOf(this.players, this::compare);
+			this.sortedPlayers = ImmutableList.of(toSortedArray());
 		return this.descending ? this.sortedPlayers.inverseOrder() : this.sortedPlayers;
+	}
+
+	public Integer[] toSortedArray() {
+		Integer[] array = toArray();
+		Arrays.sort(array, this::compare);
+		return array;
+	}
+
+	public Integer[] toArray() {
+		Integer[] array = new Integer[this.size];
+		int index = 0;
+		for (int p = 0; p < this.values.length; p++) {
+			double v = this.values[p];
+			if (v == v)
+				array[index++] = p;
+		}
+		return array;
 	}
 
 	public int compare(int p1, int p2) {

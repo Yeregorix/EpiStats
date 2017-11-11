@@ -24,8 +24,6 @@ package net.smoofyuniverse.epi.util;
 
 import java.util.AbstractList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
 
 public class ImmutableList<T> extends AbstractList<T> {
 	private static final ImmutableList EMPTY = new ImmutableList(new Object[0]);
@@ -62,50 +60,16 @@ public class ImmutableList<T> extends AbstractList<T> {
 		return EMPTY;
 	}
 
+	public static <T> ImmutableList<T> of(T[] array) {
+		if (array.length == 0)
+			return EMPTY;
+		return new ImmutableList<>(array);
+	}
+
 	public static <T> ImmutableList<T> copyOf(T[] array) {
 		if (array.length == 0)
 			return EMPTY;
 		return new ImmutableList<>(Arrays.copyOf(array, array.length));
-	}
-
-	public static <T> ImmutableList<T> copyOf(Collection<T> col) {
-		if (col.isEmpty())
-			return EMPTY;
-		if (col instanceof ImmutableList)
-			return (ImmutableList<T>) col;
-		return new ImmutableList(col.toArray(new Object[col.size()]));
-	}
-
-	public static <T> ImmutableList<T> sortedCopyOf(T[] array) {
-		if (array.length == 0)
-			return EMPTY;
-		T[] copy = Arrays.copyOf(array, array.length);
-		Arrays.sort(copy);
-		return new ImmutableList<>(copy);
-	}
-
-	public static <T> ImmutableList<T> sortedCopyOf(Collection<T> col) {
-		if (col.isEmpty())
-			return EMPTY;
-		T[] copy = col.toArray((T[]) new Object[col.size()]);
-		Arrays.sort(copy);
-		return new ImmutableList(copy);
-	}
-
-	public static <T> ImmutableList<T> sortedCopyOf(T[] array, Comparator<T> comparator) {
-		if (array.length == 0)
-			return EMPTY;
-		T[] copy = Arrays.copyOf(array, array.length);
-		Arrays.sort(copy, comparator);
-		return new ImmutableList<>(copy);
-	}
-
-	public static <T> ImmutableList<T> sortedCopyOf(Collection<T> col, Comparator<T> comparator) {
-		if (col.isEmpty())
-			return EMPTY;
-		T[] copy = col.toArray((T[]) new Object[col.size()]);
-		Arrays.sort(copy, comparator);
-		return new ImmutableList(copy);
 	}
 
 	private static class Inverted<T> extends ImmutableList<T> {
