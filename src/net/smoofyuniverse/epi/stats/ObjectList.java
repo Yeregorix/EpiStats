@@ -22,8 +22,12 @@
 
 package net.smoofyuniverse.epi.stats;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
+import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.GuildInfo;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 
@@ -38,8 +42,6 @@ import java.util.UUID;
 
 public class ObjectList {
 	public static final int CURRENT_VERSION = 1, MINIMUM_VERSION = 1;
-	
-	private static final JsonFactory factory = new JsonFactory();
 	
 	public final Set<String> guilds = new HashSet<>();
 	public final Set<UUID> players = new HashSet<>();
@@ -69,7 +71,7 @@ public class ObjectList {
 		String fn = file.getFileName().toString();
 		
 		if (fn.endsWith(".json")) {
-			try (JsonParser json = factory.createParser(Files.newInputStream(file))) {
+			try (JsonParser json = EpiStats.JSON_FACTORY.createParser(Files.newInputStream(file))) {
 				mergeJSON(json);
 			}
 		} else {
@@ -153,7 +155,7 @@ public class ObjectList {
 		String fn = file.getFileName().toString();
 		
 		if (fn.endsWith(".json")) {
-			try (JsonGenerator json = factory.createGenerator(Files.newOutputStream(file))) {
+			try (JsonGenerator json = EpiStats.JSON_FACTORY.createGenerator(Files.newOutputStream(file))) {
 				json.useDefaultPrettyPrinter();
 				saveJSON(json);
 			}

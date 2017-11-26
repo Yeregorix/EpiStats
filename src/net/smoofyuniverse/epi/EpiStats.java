@@ -22,6 +22,7 @@
 
 package net.smoofyuniverse.epi;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -38,6 +39,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Executors;
 
 public class EpiStats extends Application {
+	public static final JsonFactory JSON_FACTORY = new JsonFactory();
 
 	public EpiStats(Arguments args) {
 		super(args, "EpiStats", "1.5.3");

@@ -22,8 +22,12 @@
 
 package net.smoofyuniverse.epi.stats;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import net.smoofyuniverse.common.util.StringUtil;
+import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 import org.mariuszgromada.math.mxparser.Argument;
 
@@ -39,8 +43,6 @@ import java.util.zip.GZIPOutputStream;
 
 public class RankingList {
 	public static final int CURRENT_VERSION = 5, MINIMUM_VERSION = 1;
-	
-	private static final JsonFactory factory = new JsonFactory();
 	
 	private Map<String, Ranking> rankings = new TreeMap<>();
 	private Set<String> extensions = new HashSet<>();
@@ -173,7 +175,7 @@ public class RankingList {
 		String fn = file.getFileName().toString();
 
 		if (fn.endsWith(".json")) {
-			try (JsonGenerator json = factory.createGenerator(Files.newOutputStream(file))) {
+			try (JsonGenerator json = EpiStats.JSON_FACTORY.createGenerator(Files.newOutputStream(file))) {
 				json.useDefaultPrettyPrinter();
 				saveJSON(json);
 			}
@@ -362,7 +364,7 @@ public class RankingList {
 			throw new FileNotFoundException(fn);
 
 		if (fn.endsWith(".json")) {
-			try (JsonParser json = factory.createParser(Files.newInputStream(file))) {
+			try (JsonParser json = EpiStats.JSON_FACTORY.createParser(Files.newInputStream(file))) {
 				return readJSON(json);
 			}
 		} else {
@@ -567,7 +569,7 @@ public class RankingList {
 		}
 
 		if (l.collection == null)
-			throw new IllegalStateException("Players was not provided");
+			throw new IllegalStateException("Players were not provided");
 		return l;
 	}
 

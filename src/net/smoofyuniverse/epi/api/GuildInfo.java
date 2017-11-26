@@ -22,7 +22,6 @@
 
 package net.smoofyuniverse.epi.api;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -30,6 +29,7 @@ import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.download.ConnectionConfiguration;
 import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.DownloadUtil;
+import net.smoofyuniverse.epi.EpiStats;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -40,7 +40,6 @@ import java.util.*;
 public final class GuildInfo {
 	public static final URL URL_BASE;
 	private static final Logger logger = Application.getLogger("GuildInfo");
-	private static final JsonFactory factory = new JsonFactory();
 
 	public final List<UUID> members;
 	public final String name;
@@ -73,7 +72,7 @@ public final class GuildInfo {
 
 		int code = co.getResponseCode();
 		if (code / 100 == 2) {
-			try (JsonParser json = factory.createParser(co.getInputStream())) {
+			try (JsonParser json = EpiStats.JSON_FACTORY.createParser(co.getInputStream())) {
 				return read(json);
 			}
 		} else
