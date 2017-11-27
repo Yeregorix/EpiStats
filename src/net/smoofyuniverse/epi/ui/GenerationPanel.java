@@ -31,10 +31,10 @@ import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.GridUtil;
-import net.smoofyuniverse.epi.stats.DataCollection;
-import net.smoofyuniverse.epi.stats.RankingList;
+import net.smoofyuniverse.epi.stats.collection.DataCollection;
 import net.smoofyuniverse.epi.stats.operation.OperationException;
 import net.smoofyuniverse.epi.stats.operation.RankingOperation;
+import net.smoofyuniverse.epi.stats.ranking.RankingList;
 
 public final class GenerationPanel extends GridPane {
 	private static final Logger logger = Application.getLogger("GenerationPanel");

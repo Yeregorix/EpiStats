@@ -37,9 +37,9 @@ import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.EpiStats;
-import net.smoofyuniverse.epi.stats.DataCollection;
-import net.smoofyuniverse.epi.stats.Ranking;
-import net.smoofyuniverse.epi.stats.RankingList;
+import net.smoofyuniverse.epi.stats.collection.DataCollection;
+import net.smoofyuniverse.epi.stats.ranking.Ranking;
+import net.smoofyuniverse.epi.stats.ranking.RankingList;
 
 import java.io.File;
 import java.nio.file.Path;

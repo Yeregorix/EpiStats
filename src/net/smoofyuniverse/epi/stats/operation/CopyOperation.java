@@ -23,7 +23,7 @@
 package net.smoofyuniverse.epi.stats.operation;
 
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
-import net.smoofyuniverse.epi.stats.RankingList;
+import net.smoofyuniverse.epi.stats.ranking.RankingList;
 
 public class CopyOperation implements RankingOperation {
 	public final String name, newName;

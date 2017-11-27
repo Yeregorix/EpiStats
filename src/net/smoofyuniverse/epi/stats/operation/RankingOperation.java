@@ -24,7 +24,7 @@ package net.smoofyuniverse.epi.stats.operation;
 
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.common.util.StringUtil;
-import net.smoofyuniverse.epi.stats.RankingList;
+import net.smoofyuniverse.epi.stats.ranking.RankingList;
 import org.mariuszgromada.math.mxparser.Expression;
 
 import java.util.regex.Pattern;

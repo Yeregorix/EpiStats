@@ -42,7 +42,7 @@ import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.PlayerCache;
 import net.smoofyuniverse.epi.api.PlayerInfo;
-import net.smoofyuniverse.epi.stats.DataCollection;
+import net.smoofyuniverse.epi.stats.collection.DataCollection;
 
 import java.io.File;
 import java.nio.file.Path;

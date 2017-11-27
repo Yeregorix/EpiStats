@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package net.smoofyuniverse.epi.stats;
+package net.smoofyuniverse.epi.stats.operation;
 
 import org.mariuszgromada.math.mxparser.Argument;
 

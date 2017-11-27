@@ -33,7 +33,7 @@ import net.smoofyuniverse.common.fxui.control.AbstractListCell;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.api.PlayerInfo;
-import net.smoofyuniverse.epi.stats.Ranking;
+import net.smoofyuniverse.epi.stats.ranking.Ranking;
 
 import java.text.DecimalFormat;
 import java.util.Optional;

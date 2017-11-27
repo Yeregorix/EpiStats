@@ -24,7 +24,7 @@ package net.smoofyuniverse.epi.stats.operation;
 
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.epi.api.PlayerInfo;
-import net.smoofyuniverse.epi.stats.RankingList;
+import net.smoofyuniverse.epi.stats.ranking.RankingList;
 
 import java.util.Map;
 import java.util.Map.Entry;

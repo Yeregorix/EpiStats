@@ -25,8 +25,8 @@ package net.smoofyuniverse.epi.stats.operation;
 import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.common.logger.core.Logger;
-import net.smoofyuniverse.epi.stats.Ranking;
-import net.smoofyuniverse.epi.stats.RankingList;
+import net.smoofyuniverse.epi.stats.ranking.Ranking;
+import net.smoofyuniverse.epi.stats.ranking.RankingList;
 
 import java.util.List;
 import java.util.function.Predicate;

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package net.smoofyuniverse.epi.stats;
+package net.smoofyuniverse.epi.stats.collection;
 
 import net.smoofyuniverse.epi.api.PlayerInfo;
 
