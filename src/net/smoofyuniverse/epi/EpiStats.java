@@ -42,7 +42,7 @@ public class EpiStats extends Application {
 	public static final JsonFactory JSON_FACTORY = new JsonFactory();
 
 	public EpiStats(Arguments args) {
-		super(args, "EpiStats", "1.5.3");
+		super(args, "EpiStats", "1.6.0");
 		initServices(Executors.newSingleThreadExecutor());
 
 		Platform.runLater(() -> {
