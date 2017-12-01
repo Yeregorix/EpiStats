@@ -78,7 +78,7 @@ public final class GenerationPanel extends GridPane {
 				logger.info("Generated ranking list in " + (System.currentTimeMillis() - time) / 1000F + "s.");
 
 				Popup.info().title("Génération terminée").message("Un classement contenant " + l.getRankings().size() + " " + (l.getRankings().size() > 1 ? "catégories" : "catégorie")
-						+ " a été généré avec " + l.getPlayerCount() + " " + (l.getPlayerCount() > 1 ? "joueurs" : "joueur") + ".").show();
+						+ " a été généré avec " + l.collection.size + " " + (l.collection.size > 1 ? "joueurs" : "joueur") + ".").show();
 				this.ui.getRankingListPanel().open(l);
 			}).title("Génération des classements ..").submitAndWait();
 

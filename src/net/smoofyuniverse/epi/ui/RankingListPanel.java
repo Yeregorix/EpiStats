@@ -116,8 +116,8 @@ public final class RankingListPanel extends GridPane {
 			String name = newV.toLowerCase();
 
 			int i = 1;
-			for (int p : r.collection()) {
-				String n = this.list.getPlayer(p).name;
+			for (int p : r.list()) {
+				String n = this.list.collection.names.get(p);
 				if (n.toLowerCase().startsWith(name)) {
 					this.index.valueProperty().set(i);
 					break;
@@ -241,12 +241,12 @@ public final class RankingListPanel extends GridPane {
 				
 				this.rankings.setRoot(root);
 
-				DataCollection col = list.getCollection();
-				if (col.containsIntervals())
-					this.startDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.getMinStartDate()) + " au " + StringUtil.DATETIME_FORMAT.format(col.getMaxStartDate()));
+				DataCollection col = list.collection;
+				if (col.containsIntervals)
+					this.startDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.minStartDate) + " au " + StringUtil.DATETIME_FORMAT.format(col.maxStartDate));
 				else
 					this.startDates.setText("Depuis toujours");
-				this.endDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.getMinEndDate()) + " au " + StringUtil.DATETIME_FORMAT.format(col.getMaxEndDate()));
+				this.endDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.minEndDate) + " au " + StringUtil.DATETIME_FORMAT.format(col.maxEndDate));
 			}
 		} else
 			Platform.runLater(() -> open(list));

@@ -22,6 +22,7 @@
 
 package net.smoofyuniverse.epi.stats.ranking;
 
+import net.smoofyuniverse.epi.util.DoubleList;
 import net.smoofyuniverse.epi.util.ImmutableList;
 
 import java.util.Arrays;
@@ -36,7 +37,7 @@ public class Ranking {
 	private int size = 0;
 
 	public Ranking(RankingList parent, String name) {
-		this.values = new double[parent.getCollection().getPlayerCount()];
+		this.values = new double[parent.collection.size];
 		this.parent = parent;
 		this.name = name;
 		Arrays.fill(this.values, Double.NaN);
@@ -52,6 +53,14 @@ public class Ranking {
 
 	public Ranking copy(String newName) {
 		return new Ranking(this, newName);
+	}
+
+	public void set(DoubleList list) {
+		if (list.size() != this.values.length)
+			throw new IllegalArgumentException("Length");
+		list.toArray(this.values);
+		this.sortedPlayers = null;
+		this.size = this.values.length;
 	}
 
 	public double put(int p, double v) {
@@ -90,14 +99,14 @@ public class Ranking {
 	}
 
 	public int getRank(int p) {
-		return contains(p) ? collection().indexOf(p) : -1;
+		return contains(p) ? list().indexOf(p) : -1;
 	}
 
 	public double getValue(int p) {
 		return this.values[p];
 	}
 
-	public ImmutableList<Integer> collection() {
+	public ImmutableList<Integer> list() {
 		if (this.sortedPlayers == null)
 			this.sortedPlayers = ImmutableList.of(toSortedArray());
 		return this.descending ? this.sortedPlayers.inverseOrder() : this.sortedPlayers;

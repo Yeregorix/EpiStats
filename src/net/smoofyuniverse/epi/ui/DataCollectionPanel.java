@@ -43,6 +43,7 @@ import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.PlayerCache;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 import net.smoofyuniverse.epi.stats.collection.DataCollection;
+import net.smoofyuniverse.epi.stats.collection.DataMergeResult;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -236,56 +237,14 @@ public class DataCollectionPanel extends GridPane {
 					return;
 				}
 
-				logger.info("Collected data of " + collector.players.size() + " players in " + (System.currentTimeMillis() - time) / 1000F + "s.");
+				logger.info("Collected data of " + collector.builder.size() + " players in " + (System.currentTimeMillis() - time) / 1000F + "s.");
 
-				DataCollection col = new DataCollection(collector.players.toArray(new PlayerInfo[collector.players.size()]));
+				DataCollection col = collector.builder.build();
 				setEndCollection(col);
 
 				if (notifyTaskEnd)
-					Popup.info().title("Génération terminée").message("Une collection contenant " + col.getPlayerCount() + " " + (col.getPlayerCount() > 1 ? "joueurs" : "joueur") + " a été générée.").show();
+					Popup.info().title("Génération terminée").message("Une collection contenant " + col.size + " " + (col.size > 1 ? "joueurs" : "joueur") + " a été générée.").show();
 			}).title("Génération de la collection de données ..").submitAndWait();
-		}
-	}
-
-	private class DataCollector {
-		private ObservableTask task;
-		private Queue<UUID> ids;
-		private Instant minDate;
-
-		private List<PlayerInfo> players;
-		private transient int total, progress;
-
-		public DataCollector(ObservableTask task, Collection<UUID> ids, Instant minDate) {
-			this.task = task;
-			this.ids = new ConcurrentLinkedQueue(ids);
-			this.minDate = minDate;
-
-			this.total = ids.size();
-			this.players = Collections.synchronizedList(new ArrayList<>());
-		}
-
-		public void collectAll() {
-			while (!this.ids.isEmpty() && !this.task.isCancelled())
-				collectNext();
-		}
-
-		public void collectNext() {
-			UUID id = this.ids.poll();
-			if (id == null)
-				return;
-			this.task.setMessage("Joueur: " + id);
-
-			PlayerInfo p = DataCollectionPanel.this.cache.read(id).orElse(null);
-			if (p == null || p.endDate.isBefore(this.minDate)) {
-				p = PlayerInfo.get(id, true).orElse(null);
-				if (p != null) {
-					DataCollectionPanel.this.cache.save(p);
-					this.players.add(p);
-				}
-			} else
-				this.players.add(p);
-
-			this.task.setProgress(++this.progress / (double) this.total);
 		}
 	}
 
@@ -298,12 +257,12 @@ public class DataCollectionPanel extends GridPane {
 
 				System.gc();
 			} else {
-				if (col.containsIntervals())
+				if (col.containsIntervals)
 					throw new IllegalArgumentException("Intervals");
 
 				this.startCol = col;
-				this.startDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.getMinEndDate()) + " au " + StringUtil.DATETIME_FORMAT.format(col.getMaxEndDate()));
-				this.startPlayers.setText("(" + col.getPlayerCount() + " " + (col.getPlayerCount() > 1 ? "joueurs" : "joueur") + ")");
+				this.startDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.minEndDate) + " au " + StringUtil.DATETIME_FORMAT.format(col.maxEndDate));
+				this.startPlayers.setText("(" + col.size + " " + (col.size > 1 ? "joueurs" : "joueur") + ")");
 			}
 		} else
 			Platform.runLater(() -> setStartCollection(col));
@@ -318,12 +277,12 @@ public class DataCollectionPanel extends GridPane {
 
 				System.gc();
 			} else {
-				if (col.containsIntervals())
+				if (col.containsIntervals)
 					throw new IllegalArgumentException("Intervals");
 
 				this.endCol = col;
-				this.endDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.getMinEndDate()) + " au " + StringUtil.DATETIME_FORMAT.format(col.getMaxEndDate()));
-				this.endPlayers.setText("(" + col.getPlayerCount() + " " + (col.getPlayerCount() > 1 ? "joueurs" : "joueur") + ")");
+				this.endDates.setText("Du " + StringUtil.DATETIME_FORMAT.format(col.minEndDate) + " au " + StringUtil.DATETIME_FORMAT.format(col.maxEndDate));
+				this.endPlayers.setText("(" + col.size + " " + (col.size > 1 ? "joueurs" : "joueur") + ")");
 			}
 		} else
 			Platform.runLater(() -> setEndCollection(col));
@@ -343,51 +302,70 @@ public class DataCollectionPanel extends GridPane {
 
 		boolean useIntervals = this.startCol != null;
 
-		if (useIntervals && this.startCol.getMaxEndDate().isAfter(this.endCol.getMinEndDate())) {
+		if (useIntervals && this.startCol.maxEndDate.isAfter(this.endCol.minEndDate)) {
 			Popup.error().title("Collisions de données").header("Impossible de générer la liste de joueurs à traiter.").message("Les extremums des dates des deux collections de données ne sont pas compatibles.").show();
 			return Optional.empty();
 		}
 
-		List<PlayerInfo> players = new ArrayList<>();
-		int endMissing = 0, startMissing = 0;
-
-		for (UUID id : ids) {
-			PlayerInfo endInfo = this.endCol.getPlayer(id).orElse(null);
-			if (endInfo == null) {
-				endMissing++;
-				continue;
-			}
-
-			if (useIntervals) {
-				PlayerInfo startInfo = this.startCol.getPlayer(id).orElse(null);
-				if (startInfo == null) {
-					startMissing++;
-					continue;
-				}
-
-				endInfo = PlayerInfo.merge(startInfo, endInfo);
-			}
-
-			players.add(endInfo);
-		}
-
-		int missing = endMissing + startMissing;
-		if (missing != 0) {
+		DataMergeResult r = DataCollection.merge(ids, this.startCol, this.endCol);
+		if (r.totalMissing != 0) {
 			String msg;
-			if (missing == 1) {
-				msg = missing + " joueur présent dans la liste d'objets à traiter n'a pas été trouvé dans les données à traiter."
-						+ "\nSi vous souhaiter le traiter, vous devez " + (startMissing == 0 ? "générer ou fournir" : "fournir") + " des données contenant ce joueur."
+			if (r.totalMissing == 1) {
+				msg = r.totalMissing + " joueur présent dans la liste d'objets à traiter n'a pas été trouvé dans les données à traiter."
+						+ "\nSi vous souhaiter le traiter, vous devez " + (r.startMissing == 0 ? "générer ou fournir" : "fournir") + " des données contenant ce joueur."
 						+ "\nSouhaitez-vous continuer sans ce joueur ?";
 			} else {
-				msg = missing + " joueurs présents dans la liste d'objets à traiter n'ont pas été trouvés dans les données à traiter."
-						+ "\nSi vous souhaiter les traiter, vous devez " + (startMissing == 0 ? "générer ou fournir" : "fournir") + " des données contenant ces joueurs."
+				msg = r.totalMissing + " joueurs présents dans la liste d'objets à traiter n'ont pas été trouvés dans les données à traiter."
+						+ "\nSi vous souhaiter les traiter, vous devez " + (r.startMissing == 0 ? "générer ou fournir" : "fournir") + " des données contenant ces joueurs."
 						+ "\nSouhaitez-vous continuer sans ces joueurs ?";
 			}
 			if (!Popup.confirmation().title("Joueurs manquants").message(msg).submitAndWait())
 				return Optional.empty();
 		}
 
-		return Optional.of(new DataCollection(players.toArray(new PlayerInfo[players.size()])));
+		return Optional.of(r.collection);
+	}
+
+	private class DataCollector {
+		private ObservableTask task;
+		private Queue<UUID> ids;
+		private Instant minDate;
+
+		private DataCollection.Builder builder;
+		private transient int total, progress;
+
+		public DataCollector(ObservableTask task, Collection<UUID> ids, Instant minDate) {
+			this.task = task;
+			this.ids = new ConcurrentLinkedQueue(ids);
+			this.minDate = minDate;
+
+			this.total = ids.size();
+			this.builder = DataCollection.builder(this.ids.size(), false);
+		}
+
+		public void collectAll() {
+			while (!this.ids.isEmpty() && !this.task.isCancelled())
+				collectNext();
+		}
+
+		public void collectNext() {
+			UUID id = this.ids.poll();
+			if (id == null)
+				return;
+			this.task.setMessage("Joueur: " + id);
+
+			PlayerInfo p = DataCollectionPanel.this.cache.read(id).orElse(null);
+			if (p == null || p.date.isBefore(this.minDate)) {
+				p = PlayerInfo.get(id, true).orElse(null);
+				if (p != null) {
+					DataCollectionPanel.this.cache.save(p);
+					this.builder.add(p);
+				}
+			} else
+				this.builder.add(p);
+
+			this.task.setProgress(++this.progress / (double) this.total);
+		}
 	}
 
 	public StringProperty getCacheAge() {

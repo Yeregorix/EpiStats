@@ -121,7 +121,7 @@ public class PlayerCache {
 				map.put(in.readUTF(), in.readDouble());
 		}
 
-		return new PlayerInfo(Collections.unmodifiableMap(stats), name, guild, id, date);
+		return new PlayerInfo(Collections.unmodifiableMap(stats), id, name, guild, date);
 	}
 	
 	public void save(PlayerInfo p) {
@@ -141,9 +141,6 @@ public class PlayerCache {
 	}
 	
 	public void save(PlayerInfo p, DataOutputStream out) throws IOException {
-		if (p.startDate != null || p.startStats != null)
-			throw new IllegalArgumentException("Intervals are not saved");
-
 		out.writeInt(CURRENT_VERSION);
 
 		GZIPOutputStream zip = new GZIPOutputStream(out);
@@ -153,10 +150,10 @@ public class PlayerCache {
 		out.writeLong(p.id.getLeastSignificantBits());
 		out.writeUTF(p.name);
 		out.writeUTF(p.guild == null ? "" : p.guild);
-		out.writeLong(p.endDate.toEpochMilli());
+		out.writeLong(p.date.toEpochMilli());
 
-		out.writeInt(p.endStats.size());
-		for (Entry<String, Map<String, Double>> e : p.endStats.entrySet()) {
+		out.writeInt(p.stats.size());
+		for (Entry<String, Map<String, Double>> e : p.stats.entrySet()) {
 			out.writeUTF(e.getKey());
 			Map<String, Double> map = e.getValue();
 			out.writeInt(map.size());

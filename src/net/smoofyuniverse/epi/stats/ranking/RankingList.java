@@ -22,12 +22,7 @@
 
 package net.smoofyuniverse.epi.stats.ranking;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import net.smoofyuniverse.common.util.StringUtil;
-import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 import net.smoofyuniverse.epi.stats.collection.DataCollection;
 import net.smoofyuniverse.epi.stats.operation.PlayerDependantArgument;
@@ -44,20 +39,14 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class RankingList {
-	public static final int CURRENT_VERSION = 5, MINIMUM_VERSION = 1;
+	public static final int CURRENT_VERSION = 6, MINIMUM_VERSION = 1;
 	
 	private Map<String, Ranking> rankings = new TreeMap<>();
 	private Set<String> extensions = new HashSet<>();
-	private DataCollection collection;
+	public final DataCollection collection;
 
 	public RankingList(DataCollection col) {
 		this.collection = col;
-	}
-	
-	private RankingList() {}
-
-	public DataCollection getCollection() {
-		return this.collection;
 	}
 
 	public Optional<Ranking> get(String name) {
@@ -176,12 +165,7 @@ public class RankingList {
 	public void save(Path file) throws IOException {
 		String fn = file.getFileName().toString();
 
-		if (fn.endsWith(".json")) {
-			try (JsonGenerator json = EpiStats.JSON_FACTORY.createGenerator(Files.newOutputStream(file))) {
-				json.useDefaultPrettyPrinter();
-				saveJSON(json);
-			}
-		} else if (fn.endsWith(".csv")) {
+		if (fn.endsWith(".csv")) {
 			try (BufferedWriter out = Files.newBufferedWriter(file)) {
 				saveCSV(out);
 			}
@@ -191,88 +175,24 @@ public class RankingList {
 			}
 		}
 	}
-
-	public void saveJSON(JsonGenerator json) throws IOException {
-		json.writeStartObject();
-
-		json.writeFieldName("format_version");
-		json.writeNumber(CURRENT_VERSION);
-
-		boolean useIntervals = this.collection.containsIntervals();
-
-		json.writeFieldName("players");
-		json.writeStartArray();
-		int total = getPlayerCount();
-		for (int i = 0; i < total; i++) {
-			PlayerInfo p = getPlayer(i);
-			json.writeStartObject();
-
-			json.writeFieldName("id");
-			if (p.id == null)
-				json.writeNull();
-			else
-				json.writeString(p.id.toString());
-
-			json.writeFieldName("name");
-			json.writeString(p.name);
-
-			if (useIntervals) {
-				json.writeFieldName("dates");
-				json.writeStartArray();
-				json.writeString(StringUtil.DATETIME_FORMAT.format(p.startDate));
-				json.writeString(StringUtil.DATETIME_FORMAT.format(p.endDate));
-				json.writeEndArray();
-			} else {
-				json.writeFieldName("date");
-				json.writeString(StringUtil.DATETIME_FORMAT.format(p.endDate));
-			}
-
-			json.writeEndObject();
-		}
-		json.writeEndArray();
-
-		json.writeFieldName("rankings");
-		json.writeStartArray();
-		for (Ranking r : this.rankings.values()) {
-			json.writeStartObject();
-			json.writeFieldName("name");
-			json.writeString(r.name);
-
-			json.writeFieldName("descending");
-			json.writeBoolean(r.descending);
-
-			json.writeFieldName("content");
-			json.writeStartArray();
-			for (int p : r.collection().originalOrder()) {
-				json.writeNumber(p);
-				json.writeNumber(r.getValue(p));
-			}
-
-			json.writeEndArray();
-			json.writeEndObject();
-		}
-		json.writeEndArray();
-
-		json.writeEndObject();
-	}
 	
 	public void saveCSV(BufferedWriter out) throws IOException {
 		out.write("Dates");
 		out.newLine();
 
-		if (this.collection.containsIntervals()) {
+		if (this.collection.containsIntervals) {
 			out.write("Début");
-			StringUtil.DATETIME_FORMAT.formatTo(this.collection.getMinStartDate(), out);
+			StringUtil.DATETIME_FORMAT.formatTo(this.collection.minStartDate, out);
 			out.write(',');
-			StringUtil.DATETIME_FORMAT.formatTo(this.collection.getMaxStartDate(), out);
+			StringUtil.DATETIME_FORMAT.formatTo(this.collection.maxStartDate, out);
 			out.newLine();
 		}
 
 		out.write("Fin");
 		out.write(',');
-		StringUtil.DATETIME_FORMAT.formatTo(this.collection.getMinEndDate(), out);
+		StringUtil.DATETIME_FORMAT.formatTo(this.collection.minEndDate, out);
 		out.write(',');
-		StringUtil.DATETIME_FORMAT.formatTo(this.collection.getMaxEndDate(), out);
+		StringUtil.DATETIME_FORMAT.formatTo(this.collection.maxEndDate, out);
 		out.newLine();
 
 		Ranking[] rankings = new Ranking[this.rankings.size()];
@@ -288,11 +208,10 @@ public class RankingList {
 			out.write(r.name);
 
 			rankings[i] = r;
-			iterators[i++] = r.collection().iterator();
+			iterators[i++] = r.list().iterator();
 		}
 
-		int total = getPlayerCount();
-		for (int rank = 0; rank < total; rank++) {
+		for (int rank = 0; rank < this.collection.size; rank++) {
 			out.newLine();
 			out.write(Integer.toString(rank +1));
 
@@ -301,7 +220,7 @@ public class RankingList {
 				if (it.hasNext()) {
 					int p = it.next();
 					out.write(',');
-					out.write(getPlayer(p).name);
+					out.write(this.collection.names.get(p));
 					out.write(',');
 					out.write(Double.toString(rankings[i].getValue(p)));
 				} else {
@@ -317,25 +236,13 @@ public class RankingList {
 		GZIPOutputStream zip = new GZIPOutputStream(out);
 		out = new DataOutputStream(zip);
 
-		boolean useIntervals = this.collection.containsIntervals();
-		out.writeBoolean(useIntervals);
+		serialize(out);
 
-		int total = getPlayerCount();
-		out.writeInt(total);
-		for (int i = 0; i < total; i++) {
-			PlayerInfo p = getPlayer(i);
-			if (p.id == null) {
-				out.writeLong(0);
-				out.writeLong(0);
-			} else {
-				out.writeLong(p.id.getMostSignificantBits());
-				out.writeLong(p.id.getLeastSignificantBits());
-			}
-			out.writeUTF(p.name);
-			if (useIntervals)
-				out.writeLong(p.startDate.toEpochMilli());
-			out.writeLong(p.endDate.toEpochMilli());
-		}
+		zip.finish();
+	}
+
+	public void serialize(DataOutputStream out) throws IOException {
+		this.collection.serialize(out, false, false);
 
 		out.writeInt(this.rankings.size());
 		for (Ranking r : this.rankings.values()) {
@@ -343,236 +250,20 @@ public class RankingList {
 			out.writeBoolean(r.descending);
 
 			out.writeInt(r.size());
-			for (int p : r.collection().originalOrder()) {
+			for (int p : r.list().originalOrder()) {
 				out.writeInt(p);
 				out.writeDouble(r.getValue(p));
 			}
 		}
-
-		zip.finish();
-	}
-
-	public int getPlayerCount() {
-		return this.collection.getPlayerCount();
-	}
-
-	public PlayerInfo getPlayer(int p) {
-		return this.collection.getPlayer(p);
 	}
 
 	public static RankingList read(Path file) throws IOException {
-		String fn = file.getFileName().toString();
 		if (!Files.exists(file))
-			throw new FileNotFoundException(fn);
+			throw new FileNotFoundException(file.getFileName().toString());
 
-		if (fn.endsWith(".json")) {
-			try (JsonParser json = EpiStats.JSON_FACTORY.createParser(Files.newInputStream(file))) {
-				return readJSON(json);
-			}
-		} else {
-			try (DataInputStream in = new DataInputStream(Files.newInputStream(file))) {
-				return read(in);
-			}
+		try (DataInputStream in = new DataInputStream(Files.newInputStream(file))) {
+			return read(in);
 		}
-	}
-
-	public static RankingList readJSON(JsonParser json) throws IOException {
-		if (json.nextToken() != JsonToken.START_OBJECT)
-			throw new JsonParseException(json, "Expected to start a new object");
-
-		RankingList l = new RankingList();
-
-		int version = -1;
-		Instant date = null;
-
-		while (json.nextToken() != JsonToken.END_OBJECT) {
-			String field = json.getCurrentName();
-
-			if (version == -1) {
-				if (!field.equals("format_version") || json.nextToken() != JsonToken.VALUE_NUMBER_INT)
-					throw new IOException("Format version not provided");
-
-				version = json.getIntValue();
-				if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
-					throw new IOException("Invalid format version: " + version);
-
-				continue;
-			}
-
-			if (version == 1 && field.equals("date")) {
-				if (json.nextToken() != JsonToken.VALUE_STRING)
-					throw new JsonParseException(json, "Field 'date' was expected to be a string");
-
-				date = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
-				continue;
-			}
-
-			if (field.equals("players")) {
-				if (json.nextToken() != JsonToken.START_ARRAY)
-					throw new JsonParseException(json, "Field 'players' was expected to be an array");
-
-				List<PlayerInfo> players = new ArrayList<>();
-
-				if (version == 1) {
-					if (date == null)
-						throw new IllegalStateException("Date was not provided");
-
-					while (json.nextToken() != JsonToken.END_ARRAY) {
-						if (json.currentToken() != JsonToken.VALUE_STRING)
-							throw new JsonParseException(json, "Field 'players' was expected to contains strings");
-
-						players.add(new PlayerInfo(json.getValueAsString(), null, null, date));
-					}
-				} else {
-					while (json.nextToken() != JsonToken.END_ARRAY) {
-						if (json.currentToken() != JsonToken.START_OBJECT)
-							throw new JsonParseException(json, "Expected to start a new player object");
-
-						UUID id = null;
-						String name = null;
-						Instant startDate = null, endDate = null;
-
-						while (json.nextToken() != JsonToken.END_OBJECT) {
-							String field2 = json.getCurrentName();
-
-							if (field2.equals("id")) {
-								if (json.nextToken() != JsonToken.VALUE_STRING)
-									throw new JsonParseException(json, "Field 'id' of a player was expected to be a string");
-
-								id = UUID.fromString(json.getValueAsString());
-								continue;
-							}
-
-							if (field2.equals("name")) {
-								if (json.nextToken() != JsonToken.VALUE_STRING)
-									throw new JsonParseException(json, "Field 'name' of a player was expected to be a string");
-
-								name = json.getValueAsString();
-								continue;
-							}
-
-							if (field2.equals("dates")) {
-								if (json.nextToken() != JsonToken.START_ARRAY)
-									throw new JsonParseException(json, "Field 'dates' of a player was expected to be an array");
-
-								List<Instant> dates = new ArrayList<>();
-								while (json.nextToken() != JsonToken.END_ARRAY) {
-									if (json.currentToken() != JsonToken.VALUE_STRING)
-										throw new JsonParseException(json, "Field 'dates' of a player was expected to contains strings");
-
-									dates.add(Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString())));
-								}
-
-								startDate = dates.get(0);
-								endDate = dates.get(1);
-								continue;
-							}
-
-							if (field2.equals("date")) {
-								if (json.nextToken() != JsonToken.VALUE_STRING)
-									throw new JsonParseException(json, "Field 'date' of a player was expected to be a string");
-
-								endDate = Instant.from(StringUtil.DATETIME_FORMAT.parse(json.getValueAsString()));
-								continue;
-							}
-
-							json.nextToken();
-							json.skipChildren();
-						}
-
-						if (name == null)
-							throw new IllegalArgumentException("Field 'name' is missing");
-						if (id == null)
-							throw new IllegalArgumentException("Field 'id' is missing");
-						if (endDate == null)
-							throw new IllegalArgumentException("Field 'dates' is missing");
-
-						players.add(new PlayerInfo(name, id, startDate, endDate));
-					}
-				}
-
-				l.collection = new DataCollection(players.toArray(new PlayerInfo[players.size()]));
-				continue;
-			}
-
-			if (field.equals("rankings")) {
-				if (json.nextToken() != JsonToken.START_ARRAY)
-					throw new JsonParseException(json, "Field 'rankings' was expected to be an array");
-
-				while (json.nextToken() != JsonToken.END_ARRAY) {
-					if (json.currentToken() != JsonToken.START_OBJECT)
-						throw new JsonParseException(json, "Expected to start a new ranking object");
-
-					String name = null;
-					Boolean descending = null;
-					List<Integer> players = null;
-					List<Double> values = null;
-
-					while (json.nextToken() != JsonToken.END_OBJECT) {
-						String field2 = json.getCurrentName();
-
-						try {
-							if (field2.equals("name")) {
-								if (json.nextToken() != JsonToken.VALUE_STRING)
-									throw new JsonParseException(json, "Field 'name' of a ranking was expected to be a string");
-
-								name = json.getValueAsString();
-								continue;
-							}
-
-							if (field2.equals("descending")) {
-								if (json.nextToken() != JsonToken.VALUE_FALSE && json.currentToken() != JsonToken.VALUE_TRUE)
-									throw new JsonParseException(json, "Field 'descending' of a ranking was expected to be a boolean");
-
-								descending = json.getValueAsBoolean();
-								continue;
-							}
-
-							if (field2.equals("content")) {
-								if (json.nextToken() != JsonToken.START_ARRAY)
-									throw new JsonParseException(json, "Field 'content' of a ranking was expected to be an array");
-
-								players = new ArrayList<>();
-								values = new ArrayList<>();
-
-								while (json.nextToken() != JsonToken.END_ARRAY) {
-									players.add(json.getIntValue());
-									json.nextToken();
-									values.add(json.getDoubleValue());
-								}
-								continue;
-							}
-						} finally {
-							if (name != null && descending != null && players != null && values != null) {
-								Ranking r = new Ranking(l, name);
-
-								for (int i = 0; i < players.size(); i++)
-									r.put(players.get(i), values.get(i));
-
-								r.descending = descending;
-								l.rankings.put(r.name, r);
-
-								name = null;
-								descending = null;
-								players = null;
-								values = null;
-							}
-						}
-
-						json.nextToken();
-						json.skipChildren();
-					}
-				}
-				continue;
-			}
-
-			json.nextToken();
-			json.skipChildren();
-		}
-
-		if (l.collection == null)
-			throw new IllegalStateException("Players were not provided");
-		return l;
 	}
 
 	public static RankingList read(DataInputStream in) throws IOException {
@@ -583,35 +274,46 @@ public class RankingList {
 		if (version >= 5)
 			in = new DataInputStream(new GZIPInputStream(in));
 
-		PlayerInfo[] players;
+		return deserialize(in, version);
+	}
+
+	public static RankingList deserialize(DataInputStream in, int version) throws IOException {
+		DataCollection col;
 		if (version == 1) {
 			Instant date = Instant.ofEpochMilli(in.readLong());
 
-			players = new PlayerInfo[in.readInt()];
-			for (int i = 0; i < players.length; i++) {
-				players[i] = new PlayerInfo(in.readUTF(), null, null, date);
-			}
-		} else {
+			int size = in.readInt();
+			DataCollection.Builder builder = DataCollection.builder(size, false);
+			for (int i = 0; i < size; i++)
+				builder.add(null, PlayerInfo.EMPTY_UUID, in.readUTF(), null, date);
+
+			col = builder.build();
+		} else if (version <= 5) {
 			boolean useIntervals = version >= 4 && in.readBoolean();
 
-			players = new PlayerInfo[in.readInt()];
-			for (int i = 0; i < players.length; i++) {
-				long most = in.readLong(), least = in.readLong();
-				UUID id = (most != 0 || least != 0) ? new UUID(most, least) : null;
+			int size = in.readInt();
+			DataCollection.Builder builder = DataCollection.builder(size, useIntervals);
+			for (int i = 0; i < size; i++) {
+				UUID id = new UUID(in.readLong(), in.readLong());
 				String name = in.readUTF();
-				Instant startDate = useIntervals ? Instant.ofEpochMilli(in.readLong()) : null;
-				Instant endDate = Instant.ofEpochMilli(in.readLong());
-				players[i] = new PlayerInfo(name, id, startDate, endDate);
+				if (useIntervals)
+					builder.add(null, null, id, name, null, Instant.ofEpochMilli(in.readLong()), Instant.ofEpochMilli(in.readLong()));
+				else
+					builder.add(null, id, name, null, Instant.ofEpochMilli(in.readLong()));
 			}
+
+			col = builder.build();
+		} else {
+			col = DataCollection.deserialize(in, 3, false, false);
 		}
 
-		RankingList l = new RankingList(new DataCollection(players));
+		RankingList l = new RankingList(col);
 		int rankings = in.readInt();
 		for (int i = 0; i < rankings; i++) {
 			Ranking r = new Ranking(l, in.readUTF());
 			boolean d = in.readBoolean();
 
-			int size = version == 2 ? players.length : in.readInt();
+			int size = version == 2 ? col.size : in.readInt();
 			for (int p = 0; p < size; p++)
 				r.put(in.readInt(), in.readDouble());
 

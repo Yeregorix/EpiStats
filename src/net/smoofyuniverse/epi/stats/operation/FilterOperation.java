@@ -59,12 +59,12 @@ public class FilterOperation implements RankingOperation {
 		if (l.isEmpty())
 			return;
 
-		int total = list.getPlayerCount();
+		int total = list.collection.size;
 		for (int i = 0; i < total; i++) {
 			if (task.isCancelled())
 				return;
 
-			task.setMessage("Joueur: " + list.getPlayer(i).name);
+			task.setMessage("Joueur: " + list.collection.names.get(i));
 			p.set(i);
 
 			if (this.expression.calculate() == 0d) {

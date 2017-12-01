@@ -23,8 +23,8 @@
 package net.smoofyuniverse.epi.stats.operation;
 
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
-import net.smoofyuniverse.epi.api.PlayerInfo;
 import net.smoofyuniverse.epi.stats.ranking.RankingList;
+import net.smoofyuniverse.epi.util.ImmutableDoubleList;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -43,62 +43,34 @@ public class ImportOperation implements RankingOperation {
 		task.setTitle(all ? "Importation de toutes les catégories .." : "Importation de la catégorie '" + this.category + "' ..");
 		task.setProgress(0);
 
-		boolean useIntervals = list.getCollection().containsIntervals();
-		int total = list.getPlayerCount();
-		for (int i = 0; i < total; i++) {
-			if (task.isCancelled())
-				return;
-			PlayerInfo p = list.getPlayer(i);
-			task.setMessage("Joueur: " + p.name);
+		Map<String, Map<String, ImmutableDoubleList>> stats = list.collection.stats;
+		if (all) {
+			for (Entry<String, Map<String, ImmutableDoubleList>> section : stats.entrySet()) {
+				if (task.isCancelled())
+					return;
 
-			if (all) {
-				for (Entry<String, Map<String, Double>> stats : p.endStats.entrySet()) {
-					String category = stats.getKey();
-
-					Map<String, Double> map2 = null;
-					if (useIntervals) {
-						map2 = p.startStats.get(category);
-						if (map2 == null)
-							continue;
-					}
-
-					for (Entry<String, Double> e : stats.getValue().entrySet()) {
-						String key = e.getKey();
-						double value = e.getValue();
-
-						if (useIntervals) {
-							Double v2 = map2.get(key);
-							if (v2 == null)
-								continue;
-							value -= v2;
-						}
-
-						list.getOrCreate(category + "_" + (key.startsWith("stat_") ? key.substring(5) : key)).put(i, value);
-					}
-				}
-			} else {
-				Map<String, Double> stats = p.endStats.get(this.category);
-				if (stats != null) {
-					Map<String, Double> map2 = useIntervals ? p.startStats.get(this.category) : null;
-					if (!useIntervals || map2 != null) {
-						for (Entry<String, Double> e : stats.entrySet()) {
-							String key = e.getKey();
-							double value = e.getValue();
-
-							if (useIntervals) {
-								Double v2 = map2.get(key);
-								if (v2 == null)
-									continue;
-								value -= v2;
-							}
-
-							list.getOrCreate(category + "_" + (key.startsWith("stat_") ? key.substring(5) : key)).put(i, value);
-						}
-					}
+				String category = section.getKey();
+				int total = section.getValue().size(), i = 0;
+				for (Entry<String, ImmutableDoubleList> e : section.getValue().entrySet()) {
+					String key = e.getKey();
+					String name = category + "_" + (key.startsWith("stat_") ? key.substring(5) : key);
+					task.setMessage("Catégorie: " + name);
+					list.getOrCreate(name).set(e.getValue());
+					task.setProgress(++i / (double) total);
 				}
 			}
-
-			task.setProgress(i / (double) total);
+		} else {
+			Map<String, ImmutableDoubleList> section = stats.get(this.category);
+			if (section != null) {
+				int total = section.size(), i = 0;
+				for (Entry<String, ImmutableDoubleList> e : section.entrySet()) {
+					String key = e.getKey();
+					String name = this.category + "_" + (key.startsWith("stat_") ? key.substring(5) : key);
+					task.setMessage("Catégorie: " + name);
+					list.getOrCreate(name).set(e.getValue());
+					task.setProgress(++i / (double) total);
+				}
+			}
 		}
 	}
 }

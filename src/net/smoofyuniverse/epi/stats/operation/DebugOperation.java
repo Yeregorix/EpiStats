@@ -58,7 +58,7 @@ public class DebugOperation implements RankingOperation {
 	public static void debug(Ranking r) {
 		logger.debug("Catégorie: " + r.name);
 		int i = 1;
-		for (int p : r.collection())
-			logger.debug(i++ + " - " + r.parent.getPlayer(p).name + ": " + r.getValue(p));
+		for (int p : r.list())
+			logger.debug(i++ + " - " + r.parent.collection.names.get(p) + ": " + r.getValue(p));
 	}
 }

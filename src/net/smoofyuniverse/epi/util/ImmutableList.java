@@ -24,6 +24,7 @@ package net.smoofyuniverse.epi.util;
 
 import java.util.AbstractList;
 import java.util.Arrays;
+import java.util.Collection;
 
 public class ImmutableList<T> extends AbstractList<T> {
 	private static final ImmutableList EMPTY = new ImmutableList(new Object[0]);
@@ -70,6 +71,14 @@ public class ImmutableList<T> extends AbstractList<T> {
 		if (array.length == 0)
 			return EMPTY;
 		return new ImmutableList<>(Arrays.copyOf(array, array.length));
+	}
+
+	public static <T> ImmutableList<T> copyOf(Collection<T> col) {
+		if (col.isEmpty())
+			return EMPTY;
+		if (col instanceof ImmutableList)
+			return (ImmutableList<T>) col;
+		return new ImmutableList(col.toArray(new Object[col.size()]));
 	}
 
 	private static class Inverted<T> extends ImmutableList<T> {

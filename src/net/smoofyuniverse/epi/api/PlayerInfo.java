@@ -39,30 +39,26 @@ import java.time.Instant;
 import java.util.*;
 
 public class PlayerInfo {
+	public static final UUID EMPTY_UUID = new UUID(0, 0);
+
 	public static final URL URL_BASE;
 	private static final Logger logger = Application.getLogger("PlayerInfo");
 
-	public final Map<String, Map<String, Double>> startStats, endStats;
-	public final String name, guild;
+	public final Map<String, Map<String, Double>> stats;
 	public final UUID id;
-	public final Instant startDate, endDate;
+	public final String name, guild;
+	public final Instant date;
 
-	public PlayerInfo(String name, UUID id, Instant startDate, Instant endDate) {
-		this(null, null, name, null, id, startDate, endDate);
+	public PlayerInfo(String name, UUID id, Instant date) {
+		this(null, id, name, null, date);
 	}
 
-	public PlayerInfo(Map<String, Map<String, Double>> startStats, Map<String, Map<String, Double>> endStats, String name, String guild, UUID id, Instant startDate, Instant endDate) {
-		this.startStats = startStats;
-		this.endStats = endStats;
+	public PlayerInfo(Map<String, Map<String, Double>> stats, UUID id, String name, String guild, Instant date) {
+		this.stats = stats;
+		this.id = id;
 		this.name = name;
 		this.guild = guild;
-		this.id = id;
-		this.startDate = startDate;
-		this.endDate = endDate;
-	}
-
-	public PlayerInfo(Map<String, Map<String, Double>> endStats, String name, String guild, UUID id, Instant endDate) {
-		this(null, endStats, name, guild, id, null, endDate);
+		this.date = date;
 	}
 
 	public static Optional<PlayerInfo> get(String playerName, boolean stats) {
@@ -152,7 +148,7 @@ public class PlayerInfo {
 
 				while (json.nextToken() != JsonToken.END_OBJECT) {
 					Map<String, Double> map = new HashMap<>();
-					statsMap.put(json.getCurrentName(), map);
+					statsMap.put(json.getCurrentName(), Collections.unmodifiableMap(map));
 
 					if (json.nextToken() != JsonToken.START_OBJECT)
 						throw new JsonParseException(json, "Subfield in 'stats' was expected to be an object");
@@ -177,7 +173,7 @@ public class PlayerInfo {
 		if (id == null)
 			throw new IllegalArgumentException("Field 'player_uuid' is missing");
 
-		return new PlayerInfo(stats ? Collections.unmodifiableMap(statsMap) : null, name, guild, id, date);
+		return new PlayerInfo(stats ? Collections.unmodifiableMap(statsMap) : null, id, name, guild, date);
 	}
 
 	public static UUID idFromString(String v) {
@@ -199,17 +195,6 @@ public class PlayerInfo {
 
 	public static String idToString(UUID id) {
 		return id.toString().replace("-", "");
-	}
-
-	public static PlayerInfo merge(PlayerInfo start, PlayerInfo end) {
-		if (!start.id.equals(end.id))
-			throw new IllegalArgumentException("UUID mismatch");
-		if (start.startStats != null || end.startStats != null)
-			throw new IllegalArgumentException("Cannot merge intervals");
-		if (start.endDate.isAfter(end.endDate))
-			throw new IllegalArgumentException("Invalid interval");
-
-		return new PlayerInfo(start.endStats, end.endStats, end.name, end.guild, end.id, start.endDate, end.endDate);
 	}
 
 	static {

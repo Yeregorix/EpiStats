@@ -22,12 +22,7 @@
 
 package net.smoofyuniverse.epi.stats;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
-import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.GuildInfo;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 
@@ -68,16 +63,9 @@ public class ObjectList {
 	public void merge(Path file) throws IOException {
 		if (!Files.exists(file))
 			return;
-		String fn = file.getFileName().toString();
-		
-		if (fn.endsWith(".json")) {
-			try (JsonParser json = EpiStats.JSON_FACTORY.createParser(Files.newInputStream(file))) {
-				mergeJSON(json);
-			}
-		} else {
-			try (DataInputStream in = new DataInputStream(Files.newInputStream(file))) {
-				merge(in);
-			}
+
+		try (DataInputStream in = new DataInputStream(Files.newInputStream(file))) {
+			merge(in);
 		}
 	}
 	
@@ -95,110 +83,28 @@ public class ObjectList {
 			this.players.add(new UUID(in.readLong(), in.readLong()));
 	}
 	
-	public void mergeJSON(JsonParser json) throws IOException {
-		if (json.nextToken() != JsonToken.START_OBJECT)
-			throw new JsonParseException(json, "Expected to start a new object");
-		
-		boolean versionCheck = true;
-		while (json.nextToken() != JsonToken.END_OBJECT) {
-			String field = json.getCurrentName();
-			
-			if (versionCheck) {
-				if (!field.equals("format_version") || json.nextToken() != JsonToken.VALUE_NUMBER_INT)
-					throw new IOException("Format version not provided");
-				
-				int version = json.getIntValue();
-				if (version > CURRENT_VERSION || version < MINIMUM_VERSION)
-					throw new IOException("Invalid format version: " + version);
-				
-				versionCheck = false;
-				continue;
-			}
-			
-			if (field.equals("guilds")) {
-				if (json.nextToken() != JsonToken.START_ARRAY)
-					throw new JsonParseException(json, "Field 'guilds' was expected to be an array");
-				
-				while (json.nextToken() != JsonToken.END_ARRAY) {
-					String g = json.getValueAsString();
-					if (g != null)
-						this.guilds.add(g);
-				}
-				continue;
-			}
-			
-			if (field.equals("players")) {
-				if (json.nextToken() != JsonToken.START_ARRAY)
-					throw new JsonParseException(json, "Field 'players' was expected to be an array");
-				
-				while (json.nextToken() != JsonToken.END_ARRAY) {
-					String p = json.getValueAsString();
-					if (p != null) {
-						try {
-							this.players.add(UUID.fromString(p));
-						} catch (Exception ignored) {}
-					}
-				}
-				continue;
-			}
-			
-			json.nextToken();
-			json.skipChildren();
-		}
-	}
-	
 	public void save() throws IOException {
 		save(this.defaultFile);
 	}
 	
 	public void save(Path file) throws IOException {
-		String fn = file.getFileName().toString();
-		
-		if (fn.endsWith(".json")) {
-			try (JsonGenerator json = EpiStats.JSON_FACTORY.createGenerator(Files.newOutputStream(file))) {
-				json.useDefaultPrettyPrinter();
-				saveJSON(json);
-			}
-		} else {
-			try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(file))) {
-				save(out);
-			}
+		try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(file))) {
+			save(out);
 		}
 	}
 	
 	public void save(DataOutputStream out) throws IOException {
 		out.writeInt(CURRENT_VERSION);
-		
+
 		out.writeInt(this.guilds.size());
 		for (String g : this.guilds)
 			out.writeUTF(g);
-		
+
 		out.writeInt(this.players.size());
 		for (UUID p : this.players) {
 			out.writeLong(p.getMostSignificantBits());
 			out.writeLong(p.getLeastSignificantBits());
 		}
-	}
-	
-	public void saveJSON(JsonGenerator json) throws IOException {
-		json.writeStartObject();
-		
-		json.writeFieldName("format_version");
-		json.writeNumber(CURRENT_VERSION);
-		
-		json.writeFieldName("guilds");
-		json.writeStartArray();
-		for (String g : this.guilds)
-			json.writeString(g);
-		json.writeEndArray();
-		
-		json.writeFieldName("players");
-		json.writeStartArray();
-		for (UUID p : this.players)
-			json.writeString(p.toString());
-		json.writeEndArray();
-		
-		json.writeEndObject();
 	}
 	
 	public void refresh(ObservableTask task) {

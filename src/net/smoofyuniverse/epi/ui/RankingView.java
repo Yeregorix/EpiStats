@@ -32,7 +32,7 @@ import javafx.scene.layout.GridPane;
 import net.smoofyuniverse.common.fxui.control.AbstractListCell;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.common.util.StringUtil;
-import net.smoofyuniverse.epi.api.PlayerInfo;
+import net.smoofyuniverse.epi.stats.collection.DataCollection;
 import net.smoofyuniverse.epi.stats.ranking.Ranking;
 
 import java.text.DecimalFormat;
@@ -42,7 +42,6 @@ public final class RankingView extends ListView<Integer> {
 	public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.0#####");
 
 	private Ranking ranking;
-
 	private UserInterface ui;
 
 	public RankingView(UserInterface ui) {
@@ -79,7 +78,7 @@ public final class RankingView extends ListView<Integer> {
 		if (r == null)
 			getItems().clear();
 		else
-			getItems().setAll(r.collection());
+			getItems().setAll(r.list());
 	}
 	
 	private class StatsListCell extends AbstractListCell<Integer> {
@@ -99,13 +98,13 @@ public final class RankingView extends ListView<Integer> {
 		
 		@Override
 		protected Node getContent() {
+			DataCollection col = RankingView.this.ranking.parent.collection;
 			int p = getItem();
-			PlayerInfo info = RankingView.this.ranking.parent.getCollection().getPlayer(p);
 			
 			this.index.setText("#" + (getIndex() +1));
-			this.name.setText(info.name);
+			this.name.setText(col.names.get(p));
 			this.value.setText(DECIMAL_FORMAT.format(RankingView.this.ranking.getValue(p)));
-			this.tooltip.setText(info.startDate == null ? StringUtil.DATETIME_FORMAT.format(info.endDate) : (StringUtil.DATETIME_FORMAT.format(info.startDate) + " - " + StringUtil.DATETIME_FORMAT.format(info.endDate)));
+			this.tooltip.setText(col.containsIntervals ? (StringUtil.DATETIME_FORMAT.format(col.startDates.get(p)) + " - " + StringUtil.DATETIME_FORMAT.format(col.endDates.get(p))) : StringUtil.DATETIME_FORMAT.format(col.endDates.get(p)));
 			
 			return this.content;
 		}
