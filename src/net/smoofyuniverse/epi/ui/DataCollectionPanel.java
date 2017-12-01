@@ -254,8 +254,6 @@ public class DataCollectionPanel extends GridPane {
 				this.startCol = null;
 				this.startDates.setText("Depuis toujours");
 				this.startPlayers.setText(null);
-
-				System.gc();
 			} else {
 				if (col.containsIntervals)
 					throw new IllegalArgumentException("Intervals");
@@ -274,8 +272,6 @@ public class DataCollectionPanel extends GridPane {
 				this.endCol = null;
 				this.endDates.setText("Indéfinie");
 				this.endPlayers.setText(null);
-
-				System.gc();
 			} else {
 				if (col.containsIntervals)
 					throw new IllegalArgumentException("Intervals");

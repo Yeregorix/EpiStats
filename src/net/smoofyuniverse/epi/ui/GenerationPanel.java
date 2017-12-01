@@ -81,8 +81,6 @@ public final class GenerationPanel extends GridPane {
 						+ " a été généré avec " + l.collection.size + " " + (l.collection.size > 1 ? "joueurs" : "joueur") + ".").show();
 				this.ui.getRankingListPanel().open(l);
 			}).title("Génération des classements ..").submitAndWait();
-
-			System.gc();
 		});
 
 		setVgap(4);
