@@ -36,7 +36,6 @@ import net.smoofyuniverse.common.event.Order;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.fxui.field.IntegerField;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
-import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.EpiStats;
@@ -44,6 +43,7 @@ import net.smoofyuniverse.epi.api.PlayerCache;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 import net.smoofyuniverse.epi.stats.collection.DataCollection;
 import net.smoofyuniverse.epi.stats.collection.DataMergeResult;
+import net.smoofyuniverse.logger.core.Logger;
 
 import java.io.File;
 import java.nio.file.Path;

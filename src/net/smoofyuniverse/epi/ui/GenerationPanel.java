@@ -29,12 +29,12 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.GridPane;
 import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
-import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.epi.stats.collection.DataCollection;
 import net.smoofyuniverse.epi.stats.operation.OperationException;
 import net.smoofyuniverse.epi.stats.operation.RankingOperation;
 import net.smoofyuniverse.epi.stats.ranking.RankingList;
+import net.smoofyuniverse.logger.core.Logger;
 
 public final class GenerationPanel extends GridPane {
 	private static final Logger logger = Application.getLogger("GenerationPanel");

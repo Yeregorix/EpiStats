@@ -27,9 +27,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.download.ConnectionConfiguration;
-import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.DownloadUtil;
 import net.smoofyuniverse.epi.EpiStats;
+import net.smoofyuniverse.logger.core.Logger;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;

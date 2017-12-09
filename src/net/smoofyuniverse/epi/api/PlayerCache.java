@@ -23,7 +23,7 @@
 package net.smoofyuniverse.epi.api;
 
 import net.smoofyuniverse.common.app.Application;
-import net.smoofyuniverse.common.logger.core.Logger;
+import net.smoofyuniverse.logger.core.Logger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

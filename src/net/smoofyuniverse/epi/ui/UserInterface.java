@@ -29,11 +29,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import net.smoofyuniverse.common.app.Application;
-import net.smoofyuniverse.common.logger.core.Logger;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.PlayerCache;
 import net.smoofyuniverse.epi.stats.ObjectList;
+import net.smoofyuniverse.logger.core.Logger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
