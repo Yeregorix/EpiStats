@@ -30,7 +30,6 @@ import javafx.scene.control.Button;
 import javafx.scene.input.KeyCode;
 import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.app.Arguments;
-import net.smoofyuniverse.common.util.ResourceUtil;
 import net.smoofyuniverse.epi.api.PlayerCache;
 import net.smoofyuniverse.epi.stats.ObjectList;
 import net.smoofyuniverse.epi.ui.UserInterface;
@@ -46,7 +45,7 @@ public class EpiStats extends Application {
 		initServices(Executors.newSingleThreadExecutor());
 
 		Platform.runLater(() -> {
-			initStage(1000, 800, true, ResourceUtil.loadImage("favicon.png"));
+			initStage(1000, 800, true, "favicon.png");
 
 			Path dir = getWorkingDirectory();
 			setScene(new UserInterface(this, dir.resolve("ui.dat"), new ObjectList(dir.resolve("objects.olist")), new PlayerCache(dir.resolve("cache/")))).show();
