@@ -30,7 +30,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.app.State;
 import net.smoofyuniverse.common.event.Order;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
@@ -56,7 +56,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class DataCollectionPanel extends GridPane {
-	private static final Logger logger = Application.getLogger("DataCollectionPanel");
+	private static final Logger logger = App.getLogger("DataCollectionPanel");
 
 	private Label datesL = new Label("Dates:"), startL = new Label("Début:"), startDates = new Label("Depuis toujours"), startPlayers = new Label();
 	private Label endL = new Label("Fin:"), endDates = new Label("Indéfinie"), endPlayers = new Label(), cacheL = new Label("Cache:"), threadsL = new Label("Threads:");
@@ -203,7 +203,7 @@ public class DataCollectionPanel extends GridPane {
 
 			if (this.service == null) {
 				this.service = Executors.newCachedThreadPool();
-				Application.registerListener(State.SHUTDOWN.newListener((e) -> this.service.shutdown(), Order.DEFAULT));
+				App.registerListener(State.SHUTDOWN.newListener((e) -> this.service.shutdown(), Order.DEFAULT));
 			}
 
 			setEndCollection(null);

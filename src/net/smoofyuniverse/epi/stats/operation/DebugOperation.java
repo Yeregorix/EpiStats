@@ -22,7 +22,7 @@
 
 package net.smoofyuniverse.epi.stats.operation;
 
-import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.fxui.task.ObservableTask;
 import net.smoofyuniverse.epi.stats.ranking.Ranking;
 import net.smoofyuniverse.epi.stats.ranking.RankingList;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class DebugOperation implements RankingOperation {
-	private static final Logger logger = Application.getLogger("DebugOperation");
+	private static final Logger logger = App.getLogger("DebugOperation");
 	
 	public final Predicate<String> category;
 

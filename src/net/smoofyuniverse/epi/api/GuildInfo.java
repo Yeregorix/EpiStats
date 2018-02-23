@@ -25,7 +25,7 @@ package net.smoofyuniverse.epi.api;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.download.ConnectionConfiguration;
 import net.smoofyuniverse.common.util.DownloadUtil;
 import net.smoofyuniverse.epi.EpiStats;
@@ -39,7 +39,7 @@ import java.util.*;
 
 public final class GuildInfo {
 	public static final URL URL_BASE;
-	private static final Logger logger = Application.getLogger("GuildInfo");
+	private static final Logger logger = App.getLogger("GuildInfo");
 
 	public final List<UUID> members;
 	public final String name;
@@ -63,7 +63,7 @@ public final class GuildInfo {
 	}
 
 	public static GuildInfo read(String guildName) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), Application.get().getConnectionConfig());
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), App.get().getConnectionConfig());
 	}
 
 	public static GuildInfo read(URL url, ConnectionConfiguration config) throws IOException {

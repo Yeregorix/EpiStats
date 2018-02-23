@@ -29,7 +29,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.fxui.control.AbstractTreeCell;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.fxui.field.IntegerField;
@@ -47,7 +47,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public final class RankingListPanel extends GridPane {
-	private static final Logger logger = Application.getLogger("RankingListPanel");
+	private static final Logger logger = App.getLogger("RankingListPanel");
 
 	private Label rankingsL = new Label("Catégories:"), indexL = new Label("Index:"), searchL = new Label("Rechercher:");
 	private Label datesL = new Label("Dates:"), startL = new Label("Début:"), startDates = new Label(), endL = new Label("Fin:"), endDates = new Label();

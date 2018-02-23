@@ -28,7 +28,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.epi.EpiStats;
@@ -41,7 +41,7 @@ import java.io.File;
 import java.nio.file.Path;
 
 public class ObjectListPanel extends GridPane {
-	private static final Logger logger = Application.getLogger("ObjectListPanel");
+	private static final Logger logger = App.getLogger("ObjectListPanel");
 
 	private Label playersL = new Label("Joueurs:"), guildsL = new Label("Guildes:");
 	private Label players = new Label("0"), guilds = new Label("0");

@@ -22,7 +22,7 @@
 
 package net.smoofyuniverse.epi.api;
 
-import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.logger.core.Logger;
 
 import java.io.DataInputStream;
@@ -39,8 +39,8 @@ import java.util.zip.GZIPOutputStream;
 
 public class PlayerCache {
 	public static final int CURRENT_VERSION = 2, MINIMUM_VERSION = 1;
-	
-	private static final Logger logger = Application.getLogger("PlayerCache");
+
+	private static final Logger logger = App.getLogger("PlayerCache");
 	
 	public final Path directory;
 	

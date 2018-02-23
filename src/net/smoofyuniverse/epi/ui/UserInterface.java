@@ -28,7 +28,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import net.smoofyuniverse.common.app.Application;
+import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.PlayerCache;
@@ -42,7 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class UserInterface extends GridPane {
-	private static final Logger logger = Application.getLogger("UserInterface");
+	private static final Logger logger = App.getLogger("UserInterface");
 
 	private ObjectListPanel objectListPanel;
 	private DataCollectionPanel dataCollectionPanel;
