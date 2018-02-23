@@ -65,7 +65,11 @@ public class PlayerInfo {
 		try {
 			return Optional.of(read(playerName, stats));
 		} catch (IOException e) {
-			logger.error("Failed to get json content for player '" + playerName + "'", e);
+			String msg = e.getMessage();
+			if (msg != null && msg.startsWith("Invalid response code"))
+				logger.error("Failed to get json content for player '" + playerName + "' (" + msg + ")");
+			else
+				logger.error("Failed to get json content for player '" + playerName + "'", e);
 			return Optional.empty();
 		}
 	}
@@ -184,7 +188,11 @@ public class PlayerInfo {
 		try {
 			return Optional.of(read(playerId, stats));
 		} catch (IOException e) {
-			logger.error("Failed to get json content for player '" + playerId + "'", e);
+			String msg = e.getMessage();
+			if (msg != null && msg.startsWith("Invalid response code"))
+				logger.error("Failed to get json content for player '" + playerId + "' (" + msg + ")");
+			else
+				logger.error("Failed to get json content for player '" + playerId + "'", e);
 			return Optional.empty();
 		}
 	}
