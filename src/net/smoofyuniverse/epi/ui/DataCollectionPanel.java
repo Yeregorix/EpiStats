@@ -96,7 +96,7 @@ public class DataCollectionPanel extends GridPane {
 		this.chooser.getExtensionFilters().add(new ExtensionFilter("Collection de données", "*.dcol"));
 
 		this.loadStart.setOnAction(a -> {
-			File f = this.chooser.showOpenDialog(this.epi.getStage());
+			File f = this.chooser.showOpenDialog(this.epi.getStage().orElse(null));
 			if (f == null)
 				return;
 			Path file = f.toPath();
@@ -116,7 +116,7 @@ public class DataCollectionPanel extends GridPane {
 		this.clearStart.setOnAction(a -> setStartCollection(null));
 
 		this.loadEnd.setOnAction(a -> {
-			File f = this.chooser.showOpenDialog(this.epi.getStage());
+			File f = this.chooser.showOpenDialog(this.epi.getStage().orElse(null));
 			if (f == null)
 				return;
 			Path file = f.toPath();
@@ -144,7 +144,7 @@ public class DataCollectionPanel extends GridPane {
 			if (this.endCol == null)
 				return;
 
-			File f = this.chooser.showSaveDialog(this.epi.getStage());
+			File f = this.chooser.showSaveDialog(this.epi.getStage().orElse(null));
 			if (f == null)
 				return;
 			Path file = f.toPath();

@@ -127,7 +127,7 @@ public final class RankingListPanel extends GridPane {
 		});
 
 		this.open.setOnAction(a -> {
-			File f = this.openChooser.showOpenDialog(this.epi.getStage());
+			File f = this.openChooser.showOpenDialog(this.epi.getStage().orElse(null));
 			if (f == null)
 				return;
 			Path file = f.toPath();
@@ -147,7 +147,7 @@ public final class RankingListPanel extends GridPane {
 			if (this.list == null)
 				return;
 
-			File f = this.saveChooser.showSaveDialog(this.epi.getStage());
+			File f = this.saveChooser.showSaveDialog(this.epi.getStage().orElse(null));
 			if (f == null)
 				return;
 			Path file = f.toPath();

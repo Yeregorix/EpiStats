@@ -50,7 +50,7 @@ public class EpiStats extends Application {
 			Path dir = getWorkingDirectory();
 			setScene(new UserInterface(this, dir.resolve("ui.dat"), new ObjectList(dir.resolve("objects.olist")), new PlayerCache(dir.resolve("cache/")))).show();
 
-			Scene sc = getStage().getScene();
+			Scene sc = getStage().get().getScene();
 			sc.setOnKeyPressed((e) -> {
 				if (e.getCode() == KeyCode.ENTER) {
 					Node n = sc.getFocusOwner();

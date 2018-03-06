@@ -145,7 +145,7 @@ public class ObjectListPanel extends GridPane {
 		});
 
 		this.importL.setOnAction(a -> {
-			File f = this.chooser.showOpenDialog(this.epi.getStage());
+			File f = this.chooser.showOpenDialog(this.epi.getStage().orElse(null));
 			if (f == null)
 				return;
 			mergeObjectList(f.toPath());
@@ -153,7 +153,7 @@ public class ObjectListPanel extends GridPane {
 		});
 
 		this.exportL.setOnAction(a -> {
-			File f = this.chooser.showSaveDialog(this.epi.getStage());
+			File f = this.chooser.showSaveDialog(this.epi.getStage().orElse(null));
 			if (f == null)
 				return;
 			saveObjectList(f.toPath());
