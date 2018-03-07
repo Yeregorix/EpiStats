@@ -42,6 +42,10 @@ public class EpiStats extends Application {
 
 	public EpiStats(Arguments args) {
 		super(args, "EpiStats", "1.6.0");
+	}
+
+	@Override
+	public void init() {
 		initServices(Executors.newSingleThreadExecutor());
 
 		Platform.runLater(() -> {
@@ -64,6 +68,6 @@ public class EpiStats extends Application {
 	}
 
 	public static void main(String[] args) {
-		new EpiStats(Arguments.parse(args));
+		new EpiStats(Arguments.parse(args)).safeInit();
 	}
 }
