@@ -41,19 +41,11 @@ public interface RankingOperation {
 		return category;
 	}
 
-	public static RankingOperation merge(RankingOperation... childs) {
-		return (list, task) -> {
-			int line = 0;
-			for (RankingOperation op : childs) {
-				line++;
-				try {
-					op.accept(list, task);
-				} catch (OperationException e) {
-					e.line = line;
-					throw e;
-				}
-			}
-		};
+	public static RankingOperation parse(String[] lines) {
+		RankingOperation[] children = new RankingOperation[lines.length];
+		for (int i = 0; i < lines.length; i++)
+			children[i] = parse(lines[i]);
+		return merge(children);
 	}
 
 	public static RankingOperation parse(String line) {
@@ -101,11 +93,19 @@ public interface RankingOperation {
 		throw new IllegalArgumentException("Invalid arguments length: " + args.length);
 	}
 
-	public static RankingOperation parse(String[] lines) {
-		RankingOperation[] childs = new RankingOperation[lines.length];
-		for (int i = 0; i < lines.length; i++)
-			childs[i] = parse(lines[i]);
-		return merge(childs);
+	public static RankingOperation merge(RankingOperation... children) {
+		return (list, task) -> {
+			int line = 0;
+			for (RankingOperation op : children) {
+				line++;
+				try {
+					op.accept(list, task);
+				} catch (OperationException e) {
+					e.line = line;
+					throw e;
+				}
+			}
+		};
 	}
 
 	public void accept(RankingList list, ObservableTask task) throws OperationException;
