@@ -22,7 +22,7 @@
 
 package net.smoofyuniverse.epi.stats;
 
-import net.smoofyuniverse.common.fxui.task.ObservableTask;
+import net.smoofyuniverse.common.task.Task;
 import net.smoofyuniverse.epi.api.GuildInfo;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 
@@ -106,8 +106,8 @@ public class ObjectList {
 			out.writeLong(p.getLeastSignificantBits());
 		}
 	}
-	
-	public void refresh(ObservableTask task) {
+
+	public void refresh(Task task) {
 		int progress, total;
 		
 		task.setTitle("Collecte des données des guildes ..");

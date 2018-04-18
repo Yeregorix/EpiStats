@@ -23,11 +23,11 @@
 package net.smoofyuniverse.epi;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.input.KeyCode;
+import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.app.Arguments;
 import net.smoofyuniverse.epi.api.PlayerCache;
@@ -48,26 +48,35 @@ public class EpiStats extends Application {
 	public void init() {
 		initServices(Executors.newSingleThreadExecutor());
 
-		Platform.runLater(() -> {
-			initStage(1000, 800, true, "favicon.png");
+		if (this.UIEnabled) {
+			App.runLater(() -> {
+				initStage(1000, 800, true, "favicon.png");
 
-			Path dir = getWorkingDirectory();
-			setScene(new UserInterface(this, dir.resolve("ui.dat"), new ObjectList(dir.resolve("objects.olist")), new PlayerCache(dir.resolve("cache/")))).show();
+				Path dir = getWorkingDirectory();
+				setScene(new UserInterface(this, dir.resolve("ui.dat"), new ObjectList(dir.resolve("objects.olist")), new PlayerCache(dir.resolve("cache/")))).show();
 
-			Scene sc = getStage().get().getScene();
-			sc.setOnKeyPressed((e) -> {
-				if (e.getCode() == KeyCode.ENTER) {
-					Node n = sc.getFocusOwner();
-					if (n instanceof Button)
-						((Button) n).fire();
-				}
+				Scene sc = getStage().get().getScene();
+				sc.setOnKeyPressed((e) -> {
+					if (e.getCode() == KeyCode.ENTER) {
+						Node n = sc.getFocusOwner();
+						if (n instanceof Button)
+							((Button) n).fire();
+					}
+				});
 			});
-		});
 
-		checkForUpdate();
+			checkForUpdate();
+		} else {
+			skipStage();
+			checkForUpdate();
+
+			getLogger().info("This functionality is not ready yet.");
+
+			shutdown();
+		}
 	}
 
 	public static void main(String[] args) {
-		new EpiStats(Arguments.parse(args)).safeInit();
+		new EpiStats(Arguments.parse(args)).launch();
 	}
 }

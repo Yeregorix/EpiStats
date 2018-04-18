@@ -22,7 +22,7 @@
 
 package net.smoofyuniverse.epi.stats.operation;
 
-import net.smoofyuniverse.common.fxui.task.ObservableTask;
+import net.smoofyuniverse.common.task.Task;
 import net.smoofyuniverse.epi.stats.ranking.RankingList;
 import net.smoofyuniverse.epi.util.ImmutableDoubleList;
 
@@ -37,7 +37,7 @@ public class ImportOperation implements RankingOperation {
 	}
 
 	@Override
-	public void accept(RankingList list, ObservableTask task) {
+	public void accept(RankingList list, Task task) {
 		boolean all = this.category.equals("*");
 
 		task.setTitle(all ? "Importation de toutes les catégories .." : "Importation de la catégorie '" + this.category + "' ..");

@@ -22,7 +22,7 @@
 
 package net.smoofyuniverse.epi.stats.operation;
 
-import net.smoofyuniverse.common.fxui.task.ObservableTask;
+import net.smoofyuniverse.common.task.Task;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.stats.ranking.RankingList;
 import org.mariuszgromada.math.mxparser.Expression;
@@ -108,5 +108,5 @@ public interface RankingOperation {
 		};
 	}
 
-	public void accept(RankingList list, ObservableTask task) throws OperationException;
+	public void accept(RankingList list, Task task) throws OperationException;
 }

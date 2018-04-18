@@ -23,7 +23,7 @@
 package net.smoofyuniverse.epi.stats.operation;
 
 import net.smoofyuniverse.common.app.App;
-import net.smoofyuniverse.common.fxui.task.ObservableTask;
+import net.smoofyuniverse.common.task.Task;
 import net.smoofyuniverse.epi.stats.ranking.Ranking;
 import net.smoofyuniverse.epi.stats.ranking.RankingList;
 import net.smoofyuniverse.logger.core.Logger;
@@ -41,7 +41,7 @@ public class DebugOperation implements RankingOperation {
 	}
 
 	@Override
-	public void accept(RankingList list, ObservableTask task) {
+	public void accept(RankingList list, Task task) {
 		task.setTitle("Debug des catégories ..");
 		task.setProgress(0);
 

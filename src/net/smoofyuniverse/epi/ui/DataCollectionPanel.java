@@ -35,7 +35,7 @@ import net.smoofyuniverse.common.app.State;
 import net.smoofyuniverse.common.event.Order;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.fxui.field.IntegerField;
-import net.smoofyuniverse.common.fxui.task.ObservableTask;
+import net.smoofyuniverse.common.task.Task;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.EpiStats;
@@ -323,14 +323,14 @@ public class DataCollectionPanel extends GridPane {
 	}
 
 	private class DataCollector {
-		private ObservableTask task;
+		private Task task;
 		private Queue<UUID> ids;
 		private Instant minDate;
 
 		private DataCollection.Builder builder;
 		private transient int total, progress;
 
-		public DataCollector(ObservableTask task, Collection<UUID> ids, Instant minDate) {
+		public DataCollector(Task task, Collection<UUID> ids, Instant minDate) {
 			this.task = task;
 			this.ids = new ConcurrentLinkedQueue(ids);
 			this.minDate = minDate;
