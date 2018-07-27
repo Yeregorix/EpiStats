@@ -22,6 +22,7 @@
 
 package net.smoofyuniverse.epi.stats;
 
+import net.smoofyuniverse.common.download.ConnectionConfiguration;
 import net.smoofyuniverse.common.task.Task;
 import net.smoofyuniverse.epi.api.GuildInfo;
 import net.smoofyuniverse.epi.api.PlayerInfo;
@@ -107,7 +108,7 @@ public class ObjectList {
 		}
 	}
 
-	public void refresh(Task task) {
+	public void refresh(Task task, ConnectionConfiguration config) {
 		int progress, total;
 		
 		task.setTitle("Collecte des données des guildes ..");
@@ -120,8 +121,9 @@ public class ObjectList {
 		for (String name : this.guilds) {
 			if (task.isCancelled())
 				return;
+
 			task.setMessage("Guilde: " + name);
-			GuildInfo g = GuildInfo.get(name).orElse(null);
+			GuildInfo g = GuildInfo.get(name, config).orElse(null);
 			if (g != null) {
 				newGuilds.add(g);
 				for (UUID id : g.members)
@@ -141,13 +143,14 @@ public class ObjectList {
 		for (UUID id : this.players) {
 			if (task.isCancelled())
 				return;
+
 			task.setMessage("Joueur: " + id);
-			PlayerInfo p = PlayerInfo.get(id, false).orElse(null);
+			PlayerInfo p = PlayerInfo.get(id, config, false).orElse(null);
 			if (p != null) {
 				if (p.guild == null)
 					newPlayers.add(p);
 				else {
-					GuildInfo g = GuildInfo.get(p.guild).orElse(null);
+					GuildInfo g = GuildInfo.get(p.guild, config).orElse(null);
 					if (g == null)
 						newPlayers.add(p);
 					else

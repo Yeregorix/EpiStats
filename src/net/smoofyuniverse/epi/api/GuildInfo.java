@@ -49,9 +49,9 @@ public final class GuildInfo {
 		this.name = name;
 	}
 
-	public static Optional<GuildInfo> get(String guildName) {
+	public static Optional<GuildInfo> get(String guildName, ConnectionConfiguration config) {
 		try {
-			return Optional.of(read(guildName));
+			return Optional.of(read(guildName, config));
 		} catch (IOException e) {
 			String msg = e.getMessage();
 			if (msg != null && msg.startsWith("Invalid response code"))
@@ -62,8 +62,8 @@ public final class GuildInfo {
 		}
 	}
 
-	public static GuildInfo read(String guildName) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), App.get().getConnectionConfig());
+	public static GuildInfo read(String guildName, ConnectionConfiguration config) throws IOException {
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), config);
 	}
 
 	public static GuildInfo read(URL url, ConnectionConfiguration config) throws IOException {

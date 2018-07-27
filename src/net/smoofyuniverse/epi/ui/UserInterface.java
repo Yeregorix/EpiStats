@@ -22,6 +22,7 @@
 
 package net.smoofyuniverse.epi.ui;
 
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
@@ -37,6 +38,7 @@ import net.smoofyuniverse.logger.core.Logger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +46,7 @@ import java.nio.file.Path;
 public final class UserInterface extends GridPane {
 	private static final Logger logger = App.getLogger("UserInterface");
 
+	private ConnectionConfigPanel connectionConfigPanel;
 	private ObjectListPanel objectListPanel;
 	private DataCollectionPanel dataCollectionPanel;
 	private GenerationPanel generationPanel;
@@ -57,6 +60,7 @@ public final class UserInterface extends GridPane {
 		this.epi = epi;
 		this.saveFile = saveFile;
 
+		this.connectionConfigPanel = new ConnectionConfigPanel(this);
 		this.objectListPanel = new ObjectListPanel(this, list);
 		this.dataCollectionPanel = new DataCollectionPanel(this, cache);
 		this.generationPanel = new GenerationPanel(this);
@@ -65,22 +69,24 @@ public final class UserInterface extends GridPane {
 
 		loadUI();
 
-		this.dataCollectionPanel.getCacheAge().addListener((v, oldV, newV) -> saveUI());
-		this.generationPanel.getEditor().addListener((v, oldV, newV) -> saveUI());
+		this.connectionConfigPanel.getUserAgent().addListener(this::saveUI);
+		this.dataCollectionPanel.getCacheAge().addListener(this::saveUI);
+		this.generationPanel.getEditor().addListener(this::saveUI);
 
 		setVgap(10);
 		setHgap(10);
 		setPadding(new Insets(10));
 
-		add(this.objectListPanel, 0, 0);
-		add(this.dataCollectionPanel, 0, 1);
-		add(this.generationPanel, 0, 2);
-		add(this.rankingListPanel, 0, 3);
+		add(this.connectionConfigPanel, 0, 0);
+		add(this.objectListPanel, 0, 1);
+		add(this.dataCollectionPanel, 0, 2);
+		add(this.generationPanel, 0, 3);
+		add(this.rankingListPanel, 0, 4);
 
-		add(this.rankingView, 1, 0, 1, 4);
+		add(this.rankingView, 1, 0, 1, 5);
 		
 		getColumnConstraints().addAll(GridUtil.createColumn(60), GridUtil.createColumn(40));
-		getRowConstraints().addAll(GridUtil.createRow(), GridUtil.createRow(), GridUtil.createRow(Priority.ALWAYS), GridUtil.createRow(30));
+		getRowConstraints().addAll(GridUtil.createRow(), GridUtil.createRow(), GridUtil.createRow(), GridUtil.createRow(Priority.ALWAYS), GridUtil.createRow(30));
 	}
 
 	private void loadUI() {
@@ -89,15 +95,24 @@ public final class UserInterface extends GridPane {
 		try (DataInputStream in = new DataInputStream(Files.newInputStream(this.saveFile))) {
 			this.generationPanel.getEditor().set(in.readUTF());
 			this.dataCollectionPanel.getCacheAge().set(in.readUTF());
+			try {
+				this.connectionConfigPanel.getUserAgent().set(in.readUTF());
+			} catch (EOFException ignored) {
+			}
 		} catch (IOException e) {
 			logger.warn("Failed to load ui from file", e);
 		}
+	}
+
+	private <T> void saveUI(ObservableValue<? extends T> observable, T oldValue, T newValue) {
+		saveUI();
 	}
 
 	private void saveUI() {
 		try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(this.saveFile))) {
 			out.writeUTF(this.generationPanel.getEditor().get());
 			out.writeUTF(this.dataCollectionPanel.getCacheAge().get());
+			out.writeUTF(this.connectionConfigPanel.getUserAgent().get());
 		} catch (IOException e) {
 			logger.warn("Failed to save ui to file", e);
 		}

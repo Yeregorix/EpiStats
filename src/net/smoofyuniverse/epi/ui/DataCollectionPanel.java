@@ -32,6 +32,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.app.State;
+import net.smoofyuniverse.common.download.ConnectionConfiguration;
 import net.smoofyuniverse.common.event.Order;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.fxui.field.IntegerField;
@@ -209,7 +210,7 @@ public class DataCollectionPanel extends GridPane {
 			setEndCollection(null);
 
 			Popup.consumer((task) -> {
-				DataCollector collector = new DataCollector(task, this.ui.getObjectListPanel().getObjectList().players, minDate);
+				DataCollector collector = new DataCollector(task, this.epi.getPreferredConnectionConfig(), this.ui.getObjectListPanel().getObjectList().players, minDate);
 				int workers = Math.min(this.threads.getValue(), collector.total / 10);
 
 				logger.info("Collecting data for " + collector.total + " players (" + workers + " workers) ..");
@@ -324,14 +325,16 @@ public class DataCollectionPanel extends GridPane {
 
 	private class DataCollector {
 		private Task task;
+		private ConnectionConfiguration config;
 		private Queue<UUID> ids;
 		private Instant minDate;
 
 		private DataCollection.Builder builder;
 		private transient int total, progress;
 
-		public DataCollector(Task task, Collection<UUID> ids, Instant minDate) {
+		public DataCollector(Task task, ConnectionConfiguration config, Collection<UUID> ids, Instant minDate) {
 			this.task = task;
+			this.config = config;
 			this.ids = new ConcurrentLinkedQueue(ids);
 			this.minDate = minDate;
 
@@ -352,7 +355,7 @@ public class DataCollectionPanel extends GridPane {
 
 			PlayerInfo p = DataCollectionPanel.this.cache.read(id).orElse(null);
 			if (p == null || p.date.isBefore(this.minDate)) {
-				p = PlayerInfo.get(id, true).orElse(null);
+				p = PlayerInfo.get(id, this.config, true).orElse(null);
 				if (p != null) {
 					DataCollectionPanel.this.cache.save(p);
 					this.builder.add(p);

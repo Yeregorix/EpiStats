@@ -61,9 +61,9 @@ public class PlayerInfo {
 		this.date = date;
 	}
 
-	public static Optional<PlayerInfo> get(String playerName, boolean stats) {
+	public static Optional<PlayerInfo> get(String playerName, ConnectionConfiguration config, boolean stats) {
 		try {
-			return Optional.of(read(playerName, stats));
+			return Optional.of(read(playerName, config, stats));
 		} catch (IOException e) {
 			String msg = e.getMessage();
 			if (msg != null && msg.startsWith("Invalid response code"))
@@ -74,8 +74,8 @@ public class PlayerInfo {
 		}
 	}
 
-	public static PlayerInfo read(String playerName, boolean stats) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), App.get().getConnectionConfig(), Instant.now(), stats);
+	public static PlayerInfo read(String playerName, ConnectionConfiguration config, boolean stats) throws IOException {
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), config, Instant.now(), stats);
 	}
 
 	public static PlayerInfo read(URL url, ConnectionConfiguration config, Instant date, boolean stats) throws IOException {
@@ -184,9 +184,9 @@ public class PlayerInfo {
 		return UUID.fromString(v.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5"));
 	}
 
-	public static Optional<PlayerInfo> get(UUID playerId, boolean stats) {
+	public static Optional<PlayerInfo> get(UUID playerId, ConnectionConfiguration config, boolean stats) {
 		try {
-			return Optional.of(read(playerId, stats));
+			return Optional.of(read(playerId, config, stats));
 		} catch (IOException e) {
 			String msg = e.getMessage();
 			if (msg != null && msg.startsWith("Invalid response code"))
@@ -197,8 +197,8 @@ public class PlayerInfo {
 		}
 	}
 
-	public static PlayerInfo read(UUID playerId, boolean stats) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), App.get().getConnectionConfig(), Instant.now(), stats);
+	public static PlayerInfo read(UUID playerId, ConnectionConfiguration config, boolean stats) throws IOException {
+		return read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), config, Instant.now(), stats);
 	}
 
 	public static String idToString(UUID id) {

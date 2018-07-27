@@ -75,7 +75,7 @@ public class ObjectListPanel extends GridPane {
 			if (arg.isEmpty())
 				return;
 			this.epi.getExecutor().submit(() -> {
-				PlayerInfo p = PlayerInfo.get(arg, false).orElse(null);
+				PlayerInfo p = PlayerInfo.get(arg, this.epi.getPreferredConnectionConfig(), false).orElse(null);
 				if (p == null)
 					Popup.info().title("Données introuvables").message("Aucune donnée n'a pu être récupérée pour le pseudo : " + arg).showAndWait();
 				else if (this.list.addPlayer(p)) {
@@ -91,7 +91,7 @@ public class ObjectListPanel extends GridPane {
 			if (arg.isEmpty())
 				return;
 			this.epi.getExecutor().submit(() -> {
-				GuildInfo g = GuildInfo.get(arg).orElse(null);
+				GuildInfo g = GuildInfo.get(arg, this.epi.getPreferredConnectionConfig()).orElse(null);
 				if (g == null)
 					Popup.info().title("Données introuvables").message("Aucune donnée n'a pu être récupérée pour la guilde : " + arg).showAndWait();
 				else if (this.list.addGuild(g)) {
@@ -108,7 +108,7 @@ public class ObjectListPanel extends GridPane {
 				if (arg.isEmpty())
 					return;
 				this.epi.getExecutor().submit(() -> {
-					PlayerInfo p = PlayerInfo.get(arg, false).orElse(null);
+					PlayerInfo p = PlayerInfo.get(arg, this.epi.getPreferredConnectionConfig(), false).orElse(null);
 					if (p == null || !this.list.removePlayer(p))
 						Popup.info().title("Données introuvables").message("Le joueur spécifié n'est pas contenu dans la liste.").showAndWait();
 					else {
@@ -125,7 +125,7 @@ public class ObjectListPanel extends GridPane {
 				if (arg.isEmpty())
 					return;
 				this.epi.getExecutor().submit(() -> {
-					GuildInfo g = GuildInfo.get(arg).orElse(null);
+					GuildInfo g = GuildInfo.get(arg, this.epi.getPreferredConnectionConfig()).orElse(null);
 					if (g == null || !this.list.removeGuild(g))
 						Popup.info().title("Données introuvables").message("La guilde spécifiée n'est pas contenu dans la liste.").showAndWait();
 					else {
@@ -162,7 +162,7 @@ public class ObjectListPanel extends GridPane {
 		this.refreshL.setOnAction(a -> {
 			if (Popup.confirmation().title("Attention").message("Actualiser peut être très long pour des quantités importantes de données !\nEtes-vous sûr de vouloir continuer ?").submitAndWait()) {
 				logger.info("Starting refresh task ..");
-				if (Popup.consumer(this.list::refresh).title("Actualisation des données ..").submitAndWait()) {
+				if (Popup.consumer(t -> this.list.refresh(t, this.epi.getPreferredConnectionConfig())).title("Actualisation des données ..").submitAndWait()) {
 					logger.info("Refresh task ended.");
 					saveObjectList();
 				} else {

@@ -30,6 +30,7 @@ import javafx.scene.input.KeyCode;
 import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.app.Application;
 import net.smoofyuniverse.common.app.Arguments;
+import net.smoofyuniverse.common.download.ConnectionConfiguration;
 import net.smoofyuniverse.epi.api.PlayerCache;
 import net.smoofyuniverse.epi.stats.ObjectList;
 import net.smoofyuniverse.epi.ui.UserInterface;
@@ -40,6 +41,8 @@ import java.util.concurrent.Executors;
 public class EpiStats extends Application {
 	public static final JsonFactory JSON_FACTORY = new JsonFactory();
 
+	private ConnectionConfiguration preferredConnectionConfig;
+
 	public EpiStats(Arguments args) {
 		super(args, "EpiStats", "1.6.1");
 	}
@@ -47,10 +50,11 @@ public class EpiStats extends Application {
 	@Override
 	public void init() {
 		initServices(Executors.newSingleThreadExecutor());
+		this.preferredConnectionConfig = getConnectionConfig();
 
 		if (this.UIEnabled) {
 			App.runLater(() -> {
-				initStage(1000, 800, true, "favicon.png");
+				initStage(1000, 900, true, "favicon.png");
 
 				Path dir = getWorkingDirectory();
 				setScene(new UserInterface(this, dir.resolve("ui.dat"), new ObjectList(dir.resolve("objects.olist")), new PlayerCache(dir.resolve("cache/")))).show();
@@ -74,6 +78,20 @@ public class EpiStats extends Application {
 
 			shutdown();
 		}
+	}
+
+	public ConnectionConfiguration getPreferredConnectionConfig() {
+		return this.preferredConnectionConfig;
+	}
+
+	public void setPreferredConnectionConfig(ConnectionConfiguration config) {
+		if (config == null)
+			throw new IllegalArgumentException("config");
+		this.preferredConnectionConfig = config;
+	}
+
+	public static EpiStats get() {
+		return (EpiStats) Application.get();
 	}
 
 	public static void main(String[] args) {
