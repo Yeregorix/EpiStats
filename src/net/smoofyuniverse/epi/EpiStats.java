@@ -44,7 +44,7 @@ public class EpiStats extends Application {
 	private ConnectionConfiguration preferredConnectionConfig;
 
 	public EpiStats(Arguments args) {
-		super(args, "EpiStats", "1.6.1");
+		super(args, "EpiStats", "1.6.2");
 	}
 
 	@Override
