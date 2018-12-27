@@ -28,12 +28,12 @@ import net.smoofyuniverse.logger.core.Logger;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -54,11 +54,9 @@ public class PlayerCache {
 	
 	public List<UUID> list() {
 		List<UUID> list = new ArrayList<>();
-		
-		try (Stream<Path> st = Files.list(this.directory)) {
-			Iterator<Path> it = st.iterator();
-			while (it.hasNext()) {
-				Path file = it.next();
+
+		try (DirectoryStream<Path> st = Files.newDirectoryStream(this.directory)) {
+			for (Path file : st) {
 				String fn = file.getFileName().toString();
 				if (fn.endsWith(".pdat")) {
 					try {
@@ -66,7 +64,7 @@ public class PlayerCache {
 					} catch (IllegalArgumentException ignored) {}
 				}
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			logger.warn("Failed to list files", e);
 		}
 		
