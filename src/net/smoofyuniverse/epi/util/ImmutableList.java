@@ -78,7 +78,7 @@ public class ImmutableList<T> extends AbstractList<T> {
 			return EMPTY;
 		if (col instanceof ImmutableList)
 			return (ImmutableList<T>) col;
-		return new ImmutableList(col.toArray(new Object[col.size()]));
+		return new ImmutableList(col.toArray(new Object[0]));
 	}
 
 	private static class Inverted<T> extends ImmutableList<T> {

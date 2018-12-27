@@ -159,7 +159,7 @@ public class RankingList {
 			}
 		}
 
-		return args.toArray(new Argument[args.size()]);
+		return args.toArray(new Argument[0]);
 	}
 
 	public void save(Path file) throws IOException {

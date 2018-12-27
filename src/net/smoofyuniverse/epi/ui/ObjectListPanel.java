@@ -58,6 +58,12 @@ public class ObjectListPanel extends GridPane {
 		this.epi = ui.getEpiStats();
 		this.list = list;
 
+		this.addP.setDisable(true);
+		this.addG.setDisable(true);
+		this.removeP.setDisable(true);
+		this.removeG.setDisable(true);
+		this.refreshL.setDisable(true);
+
 		this.addP.setPrefWidth(Integer.MAX_VALUE);
 		this.addG.setPrefWidth(Integer.MAX_VALUE);
 		this.removeP.setPrefWidth(Integer.MAX_VALUE);

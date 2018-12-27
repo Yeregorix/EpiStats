@@ -81,6 +81,8 @@ public class DataCollectionPanel extends GridPane {
 		this.epi = ui.getEpiStats();
 		this.cache = cache;
 
+		this.genEnd.setDisable(true);
+
 		int cores = Runtime.getRuntime().availableProcessors();
 		this.threads = new IntegerField(1, cores * 2, cores);
 
@@ -335,7 +337,7 @@ public class DataCollectionPanel extends GridPane {
 		public DataCollector(Task task, ConnectionConfiguration config, Collection<UUID> ids, Instant minDate) {
 			this.task = task;
 			this.config = config;
-			this.ids = new ConcurrentLinkedQueue(ids);
+			this.ids = new ConcurrentLinkedQueue<>(ids);
 			this.minDate = minDate;
 
 			this.total = ids.size();
