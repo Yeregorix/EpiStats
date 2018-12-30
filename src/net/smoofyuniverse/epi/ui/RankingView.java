@@ -24,12 +24,8 @@ package net.smoofyuniverse.epi.ui;
 
 import com.sun.javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.Node;
-import javafx.scene.control.IndexedCell;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import net.smoofyuniverse.common.fxui.control.AbstractListCell;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.stats.collection.DataCollection;
@@ -80,13 +76,14 @@ public final class RankingView extends ListView<Integer> {
 		else
 			getItems().setAll(r.list());
 	}
-	
-	private class StatsListCell extends AbstractListCell<Integer> {
+
+	private class StatsListCell extends ListCell<Integer> {
 		private Label index = new Label(), name = new Label(), value = new Label();
 		private GridPane content = new GridPane();
 		private Tooltip tooltip = new Tooltip();
 		
 		public StatsListCell() {
+			setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
 			setTooltip(this.tooltip);
 			
 			this.content.add(this.index, 0, 0);
@@ -95,18 +92,29 @@ public final class RankingView extends ListView<Integer> {
 			
 			this.content.getColumnConstraints().addAll(GridUtil.createColumn(20), GridUtil.createColumn(40), GridUtil.createColumn(40));
 		}
-		
+
 		@Override
-		protected Node getContent() {
+		public void updateIndex(int index) {
+			super.updateIndex(index);
+			setGraphic(index == -1 || isEmpty() ? null : updateContent());
+		}
+
+		private Node updateContent() {
 			DataCollection col = RankingView.this.ranking.parent.collection;
 			int p = getItem();
-			
+
 			this.index.setText("#" + (getIndex() +1));
 			this.name.setText(col.names.get(p));
 			this.value.setText(DECIMAL_FORMAT.format(RankingView.this.ranking.getValue(p)));
 			this.tooltip.setText(col.containsIntervals ? (StringUtil.DATETIME_FORMAT.format(col.startDates.get(p)) + " - " + StringUtil.DATETIME_FORMAT.format(col.endDates.get(p))) : StringUtil.DATETIME_FORMAT.format(col.endDates.get(p)));
-			
+
 			return this.content;
+		}
+
+		@Override
+		protected void updateItem(Integer item, boolean empty) {
+			super.updateItem(item, empty);
+			setGraphic(getIndex() == -1 || empty ? null : updateContent());
 		}
 	}
 }

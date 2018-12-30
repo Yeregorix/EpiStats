@@ -30,7 +30,6 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import net.smoofyuniverse.common.app.App;
-import net.smoofyuniverse.common.fxui.control.AbstractTreeCell;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.fxui.field.IntegerField;
 import net.smoofyuniverse.common.util.GridUtil;
@@ -251,15 +250,30 @@ public final class RankingListPanel extends GridPane {
 		} else
 			Platform.runLater(() -> open(list));
 	}
-	
-	private class RankingTreeCell extends AbstractTreeCell<Object> {
+
+	private class RankingTreeCell extends TreeCell<Object> {
 		private Label label = new Label();
 
+		public RankingTreeCell() {
+			setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+		}
+
 		@Override
-		protected Node getContent() {
+		public void updateIndex(int index) {
+			super.updateIndex(index);
+			setGraphic(index == -1 || isEmpty() ? null : updateContent());
+		}
+
+		private Node updateContent() {
 			Object item = getTreeItem().getValue();
 			this.label.setText(item instanceof Ranking ? ((Ranking) item).name : item.toString());
 			return this.label;
+		}
+
+		@Override
+		protected void updateItem(Object item, boolean empty) {
+			super.updateItem(item, empty);
+			setGraphic(getIndex() == -1 || empty ? null : updateContent());
 		}
 	}
 }
