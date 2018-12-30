@@ -194,8 +194,7 @@ public class ObjectList {
 	
 	public boolean addGuild(GuildInfo g) {
 		if (this.guilds.add(g.name.toLowerCase())) {
-			for (UUID id : g.members)
-				this.players.add(id);
+			this.players.addAll(g.members);
 			return true;
 		}
 		return false;

@@ -30,10 +30,10 @@ import org.mariuszgromada.math.mxparser.Expression;
 import java.util.regex.Pattern;
 
 public interface RankingOperation {
-	public final static Pattern CATEGORY_NAME = Pattern.compile("([a-zA-Z_])+([a-zA-Z0-9_])*");
-	public static final RankingOperation EMPTY = (l, t) -> {};
+	Pattern CATEGORY_NAME = Pattern.compile("([a-zA-Z_])+([a-zA-Z0-9_])*");
+	RankingOperation EMPTY = (l, t) -> {};
 
-	public static String validateName(String category) {
+	static String validateName(String category) {
 		if (category.startsWith("rank_") || category.startsWith("total_"))
 			throw new IllegalArgumentException("Keyword in name");
 		if (!CATEGORY_NAME.matcher(category).matches())
@@ -41,14 +41,14 @@ public interface RankingOperation {
 		return category;
 	}
 
-	public static RankingOperation parse(String[] lines) {
+	static RankingOperation parse(String[] lines) {
 		RankingOperation[] children = new RankingOperation[lines.length];
 		for (int i = 0; i < lines.length; i++)
 			children[i] = parse(lines[i]);
 		return merge(children);
 	}
 
-	public static RankingOperation parse(String line) {
+	static RankingOperation parse(String line) {
 		String[] args = line.split("\\s+");
 		if (args.length == 0 || args[0].isEmpty())
 			return EMPTY;
@@ -93,7 +93,7 @@ public interface RankingOperation {
 		throw new IllegalArgumentException("Invalid arguments length: " + args.length);
 	}
 
-	public static RankingOperation merge(RankingOperation... children) {
+	static RankingOperation merge(RankingOperation... children) {
 		return (list, task) -> {
 			int line = 0;
 			for (RankingOperation op : children) {
@@ -108,5 +108,5 @@ public interface RankingOperation {
 		};
 	}
 
-	public void accept(RankingList list, Task task) throws OperationException;
+	void accept(RankingList list, Task task) throws OperationException;
 }

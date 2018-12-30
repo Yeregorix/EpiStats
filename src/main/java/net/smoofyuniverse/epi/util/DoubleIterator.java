@@ -23,9 +23,9 @@
 package net.smoofyuniverse.epi.util;
 
 public interface DoubleIterator {
-	public boolean hasNext();
+	boolean hasNext();
 
-	public double next();
+	double next();
 
-	public void remove();
+	void remove();
 }
