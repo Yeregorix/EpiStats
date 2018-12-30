@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+    id 'maven'
+}
+
+group 'net.smoofyuniverse'
+version = '1.6.3'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    compile 'net.smoofyuniverse:AppCommon:1.0.0'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+    compile 'org.mariuszgromada.math:MathParser.org-mXparser:4.1.1'
+}
+
+task shadedJar(type: Jar) {
+    classifier = 'shaded'
+    configurations.compile.each { dep ->
+        from(project.zipTree(dep)) {
+            exclude 'META-INF', 'META-INF/**'
+        }
+    }
+    manifest {
+        attributes('Main-Class': 'net.smoofyuniverse.common.Main')
+    }
+    with jar
+}
+
+compileJava.options.encoding = 'UTF-8'
