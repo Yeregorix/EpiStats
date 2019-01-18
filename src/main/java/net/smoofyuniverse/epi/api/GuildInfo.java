@@ -27,7 +27,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.download.ConnectionConfiguration;
-import net.smoofyuniverse.common.util.DownloadUtil;
+import net.smoofyuniverse.common.util.IOUtil;
 import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.logger.core.Logger;
 
@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.*;
 
 public final class GuildInfo {
@@ -63,7 +64,7 @@ public final class GuildInfo {
 	}
 
 	public static GuildInfo read(String guildName, ConnectionConfiguration config) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, DownloadUtil.encode(guildName) + ".json"), config);
+		return read(IOUtil.appendSuffix(URL_BASE, URLEncoder.encode(guildName, "UTF-8") + ".json"), config);
 	}
 
 	public static GuildInfo read(URL url, ConnectionConfiguration config) throws IOException {

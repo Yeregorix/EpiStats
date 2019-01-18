@@ -27,7 +27,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import net.smoofyuniverse.common.app.App;
 import net.smoofyuniverse.common.download.ConnectionConfiguration;
-import net.smoofyuniverse.common.util.DownloadUtil;
+import net.smoofyuniverse.common.util.IOUtil;
 import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.logger.core.Logger;
 
@@ -75,7 +75,7 @@ public class PlayerInfo {
 	}
 
 	public static PlayerInfo read(String playerName, ConnectionConfiguration config, boolean stats) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), config, Instant.now(), stats);
+		return read(IOUtil.appendSuffix(URL_BASE, playerName + (stats ? ".json?with=stats" : ".json")), config, Instant.now(), stats);
 	}
 
 	public static PlayerInfo read(URL url, ConnectionConfiguration config, Instant date, boolean stats) throws IOException {
@@ -198,7 +198,7 @@ public class PlayerInfo {
 	}
 
 	public static PlayerInfo read(UUID playerId, ConnectionConfiguration config, boolean stats) throws IOException {
-		return read(DownloadUtil.appendUrlSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), config, Instant.now(), stats);
+		return read(IOUtil.appendSuffix(URL_BASE, idToString(playerId) + (stats ? ".json?with=stats" : ".json")), config, Instant.now(), stats);
 	}
 
 	public static String idToString(UUID id) {
