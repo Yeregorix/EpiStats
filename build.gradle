@@ -22,7 +22,6 @@
 
 plugins {
     id 'java'
-    id 'maven'
 }
 
 group 'net.smoofyuniverse'
@@ -33,11 +32,13 @@ targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
-    mavenLocal()
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots'
+    }
 }
 
 dependencies {
-    compile 'net.smoofyuniverse:AppCommon:1.0.0'
+    compile 'net.smoofyuniverse:appcommon:1.0.0-SNAPSHOT'
     compile 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compile 'org.mariuszgromada.math:MathParser.org-mXparser:4.1.1'
 }
