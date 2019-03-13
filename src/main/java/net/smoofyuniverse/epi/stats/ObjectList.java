@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -193,7 +194,7 @@ public class ObjectList {
 	}
 	
 	public boolean addGuild(GuildInfo g) {
-		if (this.guilds.add(g.name.toLowerCase())) {
+		if (this.guilds.add(g.name.toLowerCase(Locale.ROOT))) {
 			this.players.addAll(g.members);
 			return true;
 		}
@@ -205,7 +206,7 @@ public class ObjectList {
 	}
 	
 	public boolean removeGuild(GuildInfo g) {
-		if (this.guilds.remove(g.name.toLowerCase())) {
+		if (this.guilds.remove(g.name.toLowerCase(Locale.ROOT))) {
 			for (UUID id : g.members)
 				this.players.remove(id);
 			return true;

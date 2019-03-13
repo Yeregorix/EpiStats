@@ -112,12 +112,12 @@ public final class RankingListPanel extends GridPane {
 			Ranking r = this.ui.getRankingView().currentRanking().orElse(null);
 			if (r == null || this.list == null)
 				return;
-			String name = newV.toLowerCase();
+			String name = newV.toLowerCase(Locale.ROOT);
 
 			int i = 1;
 			for (int p : r.list()) {
 				String n = this.list.collection.names.get(p);
-				if (n.toLowerCase().startsWith(name)) {
+				if (n.toLowerCase(Locale.ROOT).startsWith(name)) {
 					this.index.valueProperty().set(i);
 					break;
 				}
