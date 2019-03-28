@@ -23,7 +23,7 @@
 package net.smoofyuniverse.epi.stats;
 
 import net.smoofyuniverse.common.download.ConnectionConfiguration;
-import net.smoofyuniverse.common.task.Task;
+import net.smoofyuniverse.common.task.ProgressTask;
 import net.smoofyuniverse.epi.api.GuildInfo;
 import net.smoofyuniverse.epi.api.PlayerInfo;
 
@@ -109,7 +109,7 @@ public class ObjectList {
 		}
 	}
 
-	public void refresh(Task task, ConnectionConfiguration config) {
+	public void refresh(ProgressTask task, ConnectionConfiguration config) {
 		int progress, total;
 		
 		task.setTitle("Collecte des données des guildes ..");

@@ -38,7 +38,7 @@ repositories {
 }
 
 dependencies {
-    compile 'net.smoofyuniverse:appcommon:1.0.0-SNAPSHOT'
+    compile 'net.smoofyuniverse:appcommon:1.0.1-SNAPSHOT'
     compile 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compile 'org.mariuszgromada.math:MathParser.org-mXparser:4.1.1'
 }

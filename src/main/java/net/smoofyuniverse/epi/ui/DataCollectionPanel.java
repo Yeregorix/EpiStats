@@ -36,7 +36,7 @@ import net.smoofyuniverse.common.download.ConnectionConfiguration;
 import net.smoofyuniverse.common.event.Order;
 import net.smoofyuniverse.common.fxui.dialog.Popup;
 import net.smoofyuniverse.common.fxui.field.IntegerField;
-import net.smoofyuniverse.common.task.Task;
+import net.smoofyuniverse.common.task.ProgressTask;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.common.util.StringUtil;
 import net.smoofyuniverse.epi.EpiStats;
@@ -206,7 +206,7 @@ public class DataCollectionPanel extends GridPane {
 
 			if (this.service == null) {
 				this.service = Executors.newCachedThreadPool();
-				App.registerListener(State.SHUTDOWN.newListener((e) -> this.service.shutdown(), Order.DEFAULT));
+				State.SHUTDOWN.newListener(e -> this.service.shutdown(), Order.DEFAULT).register();
 			}
 
 			setEndCollection(null);
@@ -326,7 +326,7 @@ public class DataCollectionPanel extends GridPane {
 	}
 
 	private class DataCollector {
-		private Task task;
+		private ProgressTask task;
 		private ConnectionConfiguration config;
 		private Queue<UUID> ids;
 		private Instant minDate;
@@ -334,7 +334,7 @@ public class DataCollectionPanel extends GridPane {
 		private DataCollection.Builder builder;
 		private transient int total, progress;
 
-		public DataCollector(Task task, ConnectionConfiguration config, Collection<UUID> ids, Instant minDate) {
+		public DataCollector(ProgressTask task, ConnectionConfiguration config, Collection<UUID> ids, Instant minDate) {
 			this.task = task;
 			this.config = config;
 			this.ids = new ConcurrentLinkedQueue<>(ids);

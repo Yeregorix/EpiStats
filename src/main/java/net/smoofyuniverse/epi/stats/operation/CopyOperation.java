@@ -22,7 +22,7 @@
 
 package net.smoofyuniverse.epi.stats.operation;
 
-import net.smoofyuniverse.common.task.Task;
+import net.smoofyuniverse.common.task.ProgressTask;
 import net.smoofyuniverse.epi.stats.ranking.RankingList;
 
 public class CopyOperation implements RankingOperation {
@@ -34,7 +34,7 @@ public class CopyOperation implements RankingOperation {
 	}
 
 	@Override
-	public void accept(RankingList list, Task task) {
+	public void accept(RankingList list, ProgressTask task) {
 		list.copy(this.name, this.newName);
 	}
 }

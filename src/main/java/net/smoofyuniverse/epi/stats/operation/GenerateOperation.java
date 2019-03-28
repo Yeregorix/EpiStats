@@ -22,7 +22,7 @@
 
 package net.smoofyuniverse.epi.stats.operation;
 
-import net.smoofyuniverse.common.task.Task;
+import net.smoofyuniverse.common.task.ProgressTask;
 import net.smoofyuniverse.epi.stats.ranking.Ranking;
 import net.smoofyuniverse.epi.stats.ranking.RankingList;
 import org.mariuszgromada.math.mxparser.Expression;
@@ -41,7 +41,7 @@ public class GenerateOperation implements RankingOperation {
 	}
 
 	@Override
-	public void accept(RankingList list, Task task) throws OperationException {
+	public void accept(RankingList list, ProgressTask task) throws OperationException {
 		task.setTitle("Génération de la catégorie '" + this.category + "' ..");
 		task.setProgress(0);
 
