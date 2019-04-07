@@ -29,7 +29,7 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import net.smoofyuniverse.common.app.App;
-import net.smoofyuniverse.common.fxui.dialog.Popup;
+import net.smoofyuniverse.common.fx.dialog.Popup;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.epi.EpiStats;
 import net.smoofyuniverse.epi.api.GuildInfo;

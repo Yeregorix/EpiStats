@@ -28,7 +28,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.GridPane;
 import net.smoofyuniverse.common.app.App;
-import net.smoofyuniverse.common.fxui.dialog.Popup;
+import net.smoofyuniverse.common.fx.dialog.Popup;
 import net.smoofyuniverse.common.util.GridUtil;
 import net.smoofyuniverse.epi.stats.collection.DataCollection;
 import net.smoofyuniverse.epi.stats.operation.OperationException;
