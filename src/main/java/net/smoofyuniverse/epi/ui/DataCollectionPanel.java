@@ -105,7 +105,7 @@ public class DataCollectionPanel extends GridPane {
 			Path file = f.toPath();
 
 			setStartCollection(null);
-			this.epi.getExecutor().submit(() -> {
+			this.epi.getExecutor().execute(() -> {
 				try {
 					logger.debug("Reading data collection from file ..");
 					setStartCollection(DataCollection.read(file));
@@ -125,7 +125,7 @@ public class DataCollectionPanel extends GridPane {
 			Path file = f.toPath();
 
 			setEndCollection(null);
-			this.epi.getExecutor().submit(() -> {
+			this.epi.getExecutor().execute(() -> {
 				try {
 					logger.debug("Reading data collection from file ..");
 					setEndCollection(DataCollection.read(file));
@@ -152,7 +152,7 @@ public class DataCollectionPanel extends GridPane {
 				return;
 			Path file = f.toPath();
 
-			this.epi.getExecutor().submit(() -> {
+			this.epi.getExecutor().execute(() -> {
 				try {
 					logger.debug("Saving data collection to file ..");
 					this.endCol.save(file);
@@ -223,7 +223,7 @@ public class DataCollectionPanel extends GridPane {
 
 				CountDownLatch lock = new CountDownLatch(workers);
 				for (int i = 0; i < workers; i++) {
-					this.service.submit(() -> {
+					this.service.execute(() -> {
 						collector.collectAll();
 						lock.countDown();
 					});

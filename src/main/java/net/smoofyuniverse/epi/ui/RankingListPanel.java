@@ -130,8 +130,8 @@ public final class RankingListPanel extends GridPane {
 			if (f == null)
 				return;
 			Path file = f.toPath();
-			
-			this.epi.getExecutor().submit(() -> {
+
+			this.epi.getExecutor().execute(() -> {
 				try {
 					logger.debug("Reading ranking list from file ..");
 					open(RankingList.read(file));
@@ -150,8 +150,8 @@ public final class RankingListPanel extends GridPane {
 			if (f == null)
 				return;
 			Path file = f.toPath();
-			
-			this.epi.getExecutor().submit(() -> {
+
+			this.epi.getExecutor().execute(() -> {
 				try {
 					logger.debug("Saving ranking list to file ..");
 					this.list.save(file);

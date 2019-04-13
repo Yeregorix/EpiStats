@@ -80,7 +80,7 @@ public class ObjectListPanel extends GridPane {
 			String arg = Popup.textInput().title("Ajouter").message("Ajouter un joueur:").showAndWait().orElse("");
 			if (arg.isEmpty())
 				return;
-			this.epi.getExecutor().submit(() -> {
+			this.epi.getExecutor().execute(() -> {
 				PlayerInfo p = PlayerInfo.get(arg, this.epi.getPreferredConnectionConfig(), false).orElse(null);
 				if (p == null)
 					Popup.info().title("Données introuvables").message("Aucune donnée n'a pu être récupérée pour le pseudo : " + arg).showAndWait();
@@ -96,7 +96,7 @@ public class ObjectListPanel extends GridPane {
 			String arg = Popup.textInput().title("Ajouter").message("Ajouter une guilde et ses membres:").showAndWait().orElse("");
 			if (arg.isEmpty())
 				return;
-			this.epi.getExecutor().submit(() -> {
+			this.epi.getExecutor().execute(() -> {
 				GuildInfo g = GuildInfo.get(arg, this.epi.getPreferredConnectionConfig()).orElse(null);
 				if (g == null)
 					Popup.info().title("Données introuvables").message("Aucune donnée n'a pu être récupérée pour la guilde : " + arg).showAndWait();
@@ -113,7 +113,7 @@ public class ObjectListPanel extends GridPane {
 				String arg = Popup.textInput().title("Retirer").message("Retirer un joueur:").showAndWait().orElse("");
 				if (arg.isEmpty())
 					return;
-				this.epi.getExecutor().submit(() -> {
+				this.epi.getExecutor().execute(() -> {
 					PlayerInfo p = PlayerInfo.get(arg, this.epi.getPreferredConnectionConfig(), false).orElse(null);
 					if (p == null || !this.list.removePlayer(p))
 						Popup.info().title("Données introuvables").message("Le joueur spécifié n'est pas contenu dans la liste.").showAndWait();
@@ -130,7 +130,7 @@ public class ObjectListPanel extends GridPane {
 				String arg = Popup.textInput().title("Retirer").message("Retirer une guilde et ses membres:").showAndWait().orElse("");
 				if (arg.isEmpty())
 					return;
-				this.epi.getExecutor().submit(() -> {
+				this.epi.getExecutor().execute(() -> {
 					GuildInfo g = GuildInfo.get(arg, this.epi.getPreferredConnectionConfig()).orElse(null);
 					if (g == null || !this.list.removeGuild(g))
 						Popup.info().title("Données introuvables").message("La guilde spécifiée n'est pas contenu dans la liste.").showAndWait();
