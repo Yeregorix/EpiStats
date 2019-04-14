@@ -76,7 +76,7 @@ public final class RankingListPanel extends GridPane {
 		this.openChooser.getExtensionFilters().addAll(new ExtensionFilter("Liste de classements", "*.rlist"), new ExtensionFilter("Représentation JSON", "*.json"));
 		this.saveChooser.getExtensionFilters().addAll(new ExtensionFilter("Liste de classements", "*.rlist"), new ExtensionFilter("Représentation JSON", "*.json"), new ExtensionFilter("Représentation tabulaire", "*.csv"));
 
-		this.rankings.setCellFactory(l -> new RankingTreeCell());
+		this.rankings.setCellFactory(l -> new RankingCell());
 		this.rankings.getSelectionModel().selectedItemProperty().addListener((v, oldV, newV) -> {
 			if (newV != null) {
 				Object obj = newV.getValue();
@@ -251,10 +251,10 @@ public final class RankingListPanel extends GridPane {
 			Platform.runLater(() -> open(list));
 	}
 
-	private class RankingTreeCell extends TreeCell<Object> {
+	private class RankingCell extends TreeCell<Object> {
 		private Label label = new Label();
 
-		public RankingTreeCell() {
+		public RankingCell() {
 			setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
 		}
 

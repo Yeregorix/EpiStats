@@ -42,8 +42,8 @@ public final class RankingView extends ListView<Integer> {
 
 	public RankingView(UserInterface ui) {
 		this.ui = ui;
-		
-		setCellFactory(l -> new StatsListCell());
+
+		setCellFactory(l -> new StatsCell());
 		getSelectionModel().selectedIndexProperty().addListener((v, oldV, newV) -> this.ui.getRankingListPanel().setSelectedIndex(newV.intValue()));
 	}
 	
@@ -77,12 +77,12 @@ public final class RankingView extends ListView<Integer> {
 			getItems().setAll(r.list());
 	}
 
-	private class StatsListCell extends ListCell<Integer> {
+	private class StatsCell extends ListCell<Integer> {
 		private Label index = new Label(), name = new Label(), value = new Label();
 		private GridPane content = new GridPane();
 		private Tooltip tooltip = new Tooltip();
-		
-		public StatsListCell() {
+
+		public StatsCell() {
 			setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
 			setTooltip(this.tooltip);
 			
